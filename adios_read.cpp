@@ -79,7 +79,7 @@ int main (int argc, char ** argv)
     MPI_Comm_rank (comm, &rank);
     MPI_Comm_size (comm, &size);
 
-    adios_read_init_method (adios_read_method, comm, "verbose=3;cm_port=60001;cm_remote_port=60000");
+    adios_read_init_method (adios_read_method, comm, "verbose=10;cm_port=60001;cm_remote_port=60000");
 
     f = adios_read_open ("adios_globaltime.bp", adios_read_method,
                          comm, ADIOS_LOCKMODE_NONE, timeout_sec);
