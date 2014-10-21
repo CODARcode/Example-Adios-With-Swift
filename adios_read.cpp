@@ -13,18 +13,59 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h> 
+#include <libgen.h>
 #include "mpi.h"
+#include "adios.h"
 #include "adios_read.h"
 #include "adios_error.h"
 
+using namespace std;
+
+void usage(const char *argv0)
+{
+    fprintf(stderr, "usage: %s\n", argv0);
+    fprintf(stderr, "Options:\n");
+    fprintf(stderr, "-w [ MPI | ICEE ]\n");
+    fprintf(stderr, "-r [ BP | ICEE ]\n");
+    exit (1);
+}
+
 int main (int argc, char ** argv) 
 {
+    int c;
+    opterr = 0;
+
+    string adios_write_method = "MPI";
+    enum ADIOS_READ_METHOD adios_read_method = ADIOS_READ_METHOD_BP;
+
+    while ((c = getopt (argc, argv, "w:r:")) != -1)
+    {
+        switch (c)
+        {
+        case 'w':
+            adios_write_method = string(optarg);
+            break;
+        case 'r':
+            if (string(optarg) == "BP") {
+                adios_read_method = ADIOS_READ_METHOD_BP;
+            } else if (string(optarg) == "ICEE") {
+                adios_read_method = ADIOS_READ_METHOD_ICEE;
+            } else {
+                fprintf(stderr, "No read method: %s\n", optarg);
+            }
+            break;
+        default:
+            usage(basename(argv[0]));
+            break;
+        }
+    }
+
     int         rank, size, i, j;
     MPI_Comm    comm = MPI_COMM_WORLD;
     ADIOS_FILE * f;
     ADIOS_VARINFO * v;
     ADIOS_SELECTION * sel;
-    enum ADIOS_READ_METHOD adios_read_method = ADIOS_READ_METHOD_ICEE;
 
     int steps = 0;
     int retval = 0;

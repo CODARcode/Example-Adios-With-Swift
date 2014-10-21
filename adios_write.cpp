@@ -14,15 +14,57 @@
  */
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h> 
+#include <libgen.h>
 #include "mpi.h"
 #include "adios.h"
+#include "adios_read.h"
 
 #ifdef DMALLOC
 #include "dmalloc.h"
 #endif
 
+using namespace std;
+
+void usage(const char *argv0)
+{
+    fprintf(stderr, "usage: %s\n", argv0);
+    fprintf(stderr, "Options:\n");
+    fprintf(stderr, "-w [ MPI | ICEE ]\n");
+    fprintf(stderr, "-r [ BP | ICEE ]\n");
+    exit (1);
+}
+
 int main (int argc, char ** argv) 
 {
+    int c;
+    opterr = 0;
+
+    string adios_write_method = "MPI";
+    enum ADIOS_READ_METHOD adios_read_method = ADIOS_READ_METHOD_BP;
+
+    while ((c = getopt (argc, argv, "w:r:")) != -1)
+    {
+        switch (c)
+        {
+        case 'w':
+            adios_write_method = string(optarg);
+            break;
+        case 'r':
+            if (string(optarg) == "BP") {
+                adios_read_method = ADIOS_READ_METHOD_BP;
+            } else if (string(optarg) == "ICEE") {
+                adios_read_method = ADIOS_READ_METHOD_ICEE;
+            } else {
+                fprintf(stderr, "No read method: %s\n", optarg);
+            }
+            break;
+        default:
+            usage(basename(argv[0]));
+            break;
+        }
+    }
+
 	char        filename [256];
 	int         rank, size, i;
 	int         NX = 10, G, O; 
@@ -37,7 +79,7 @@ int main (int argc, char ** argv)
 	MPI_Comm_rank (comm, &rank);
 	MPI_Comm_size (comm, &size);
 
-    G = 2 * NX * size;
+    G = NX * size;
 
 	strcpy (filename, "adios_globaltime.bp");
 
@@ -48,7 +90,7 @@ int main (int argc, char ** argv)
     int64_t       m_adios_file;
 
     adios_declare_group (&m_adios_group, "restart", "", adios_flag_yes);
-    adios_select_method (m_adios_group, "ICEE", "verbose=3;cm_port=60000", "");
+    adios_select_method (m_adios_group, adios_write_method.c_str(), "verbose=3;cm_port=60000", "");
 
     adios_define_var (m_adios_group, "NX"
                       ,"", adios_integer
@@ -60,15 +102,13 @@ int main (int argc, char ** argv)
 
     /* have to define O and temperature as many times as we 
        write them within one step (twice) */
-    for (it=0; it < 2; it++) {
-        adios_define_var (m_adios_group, "O"
-                          ,"", adios_integer
-                          ,0, 0, 0);
+    adios_define_var (m_adios_group, "O"
+                      ,"", adios_integer
+                      ,0, 0, 0);
     
-        adios_define_var (m_adios_group, "temperature"
-                          ,"", adios_double
-                          ,"NX", "G", "O");
-    }
+    adios_define_var (m_adios_group, "temperature"
+                      ,"", adios_double
+                      ,"NX", "G", "O");
 
     for (it =0; it < 5; it++) {
 
@@ -82,14 +122,7 @@ int main (int argc, char ** argv)
 
         adios_write(m_adios_file, "NX", (void *) &NX);
         adios_write(m_adios_file, "G", (void *) &G);
-        O = rank * 2 * NX;
-        adios_write(m_adios_file, "O", (void *) &O);
-        adios_write(m_adios_file, "temperature", t);
-
-        for (i = 0; i < NX; i++)
-            t[i] += 0.01;
-
-        O = rank * 2 * NX + NX;
+        O = rank * NX;
         adios_write(m_adios_file, "O", (void *) &O);
         adios_write(m_adios_file, "temperature", t);
 
