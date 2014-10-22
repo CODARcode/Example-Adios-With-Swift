@@ -117,7 +117,7 @@ int main (int argc, char ** argv)
         //start[1] = 0;
         //count[1] = v->dims[1];
 
-        data = malloc (slice_size * v->dims[1] * 8);
+        data = malloc (slice_size * v->dims[0] * 8);
 
         /* Processing loop over the steps (we are already in the first one) */
         while (adios_errno != err_end_of_stream) {
