@@ -5,10 +5,7 @@
  * Copyright (c) 2008 - 2009.  UT-BATTELLE, LLC. All rights reserved.
  */
 
-/* ADIOS C Example: read global arrays from a BP file
- * which has multiple timesteps,
- * reading step by step
- *
+/* ADIOS ICEE Example
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,6 +16,8 @@
 #include "adios.h"
 #include "adios_read.h"
 #include "adios_error.h"
+
+#define VERBOSE 3
 
 using namespace std;
 
@@ -36,13 +35,31 @@ int main (int argc, char ** argv)
     int c;
     opterr = 0;
 
+    string cm_host = "localhost";
+    int    cm_port = 59997;
+    string cm_remote_host = "localhost";
+    int    cm_remote_port = 59999;
+    char   initstring [256];
+
     string adios_write_method = "MPI";
     enum ADIOS_READ_METHOD adios_read_method = ADIOS_READ_METHOD_BP;
 
-    while ((c = getopt (argc, argv, "w:r:")) != -1)
+    while ((c = getopt (argc, argv, "h:p:s:t:w:r:")) != -1)
     {
         switch (c)
         {
+        case 'h':
+            cm_host = string(optarg);
+            break;
+        case 'p':
+            cm_port = atoi(optarg);
+            break;
+        case 's':
+            cm_remote_host = string(optarg);
+            break;
+        case 't':
+            cm_remote_port = atoi(optarg);
+            break;
         case 'w':
             adios_write_method = string(optarg);
             break;
@@ -79,7 +96,11 @@ int main (int argc, char ** argv)
     MPI_Comm_rank (comm, &rank);
     MPI_Comm_size (comm, &size);
 
-    adios_read_init_method (adios_read_method, comm, "verbose=10;cm_port=60001;cm_remote_port=60000");
+
+    sprintf(initstring, "verbose=%d;cm_host=%s;cm_port=%d;cm_remote_host=%s;cm_remote_port=%d;", 
+            VERBOSE, cm_host.c_str(), cm_port, cm_remote_host.c_str(), cm_remote_port);
+
+    adios_read_init_method (adios_read_method, comm, initstring);
 
     f = adios_read_open ("adios_globaltime.bp", adios_read_method,
                          comm, ADIOS_LOCKMODE_NONE, timeout_sec);
