@@ -13,7 +13,7 @@ port:    59997                  59999
 
 Execution is as follows. First, run the writer:
 
-$ adios_write -w ICEE -h host1 -p 59997
+$ adios_write -w ICEE -p 59997
 
 Then, run the reader in another terminal:
 
