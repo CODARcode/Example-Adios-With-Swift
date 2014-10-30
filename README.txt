@@ -11,20 +11,20 @@ In ICEE, an initial connection is established between a writer and a
 reader by the following steps:
 
 1. Writer listens on a port, say P1, waiting a client (or multiple) to
-register. Writer's listening port can be specificed by "cm_port"
+register. Writer's listening port can be specified by "cm_port"
 option when calling adios_select_method (when using Adios no xml init)
 or in an xml file.
-
+and
 The following options can be used for initializing writer:
 
     cm_port : writer's listening port
     max_client : number of clients to register (default is 1)
 
-2. A reader needs to know the writer's hostname nand port. Then, the
+2. A reader needs to know the writer's hostname and port. Then, the
 reader connects to the writer and registers his connection information
 (reader's hostname and port). 
 
-The following options can be specificed on calling
+The following options can be specified on calling
 adios_read_init_method:
 
     cm_host : reader's hostname
@@ -38,7 +38,7 @@ multiple sources. Then, use the following option:
     remote_list : specify multiple writer's location in the format:
     hostname1:port1,hostname2:port2,...
 
-3. After successfull registration, the writer will push data to the reader.
+3. After successful registration, the writer will push data to the reader.
 
 
 
