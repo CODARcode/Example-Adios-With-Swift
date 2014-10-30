@@ -42,12 +42,15 @@ int main (int argc, char ** argv)
     int    cm_port = 59999;
     string cm_remote_host = "localhost";
     int    cm_remote_port = 59997;
+    int    is_multi_writers = 0;
+    string remote_list = "";
+    int    max_client = 1;
     char   initstring [256];
 
     string adios_write_method = "MPI";
     enum ADIOS_READ_METHOD adios_read_method = ADIOS_READ_METHOD_BP;
 
-    while ((c = getopt (argc, argv, "h:p:s:t:w:r:")) != -1)
+    while ((c = getopt (argc, argv, "h:p:s:t:m:w:r:")) != -1)
     {
         switch (c)
         {
@@ -62,6 +65,9 @@ int main (int argc, char ** argv)
             break;
         case 't':
             cm_remote_port = atoi(optarg);
+            break;
+        case 'm':
+            max_client = atoi(optarg);
             break;
         case 'w':
             adios_write_method = string(optarg);
@@ -99,8 +105,8 @@ int main (int argc, char ** argv)
 
 	strcpy (filename, "adios_globaltime.bp");
 
-    sprintf(initstring, "verbose=%d;cm_host=%s;cm_port=%d;", 
-            VERBOSE, cm_host.c_str(), cm_port);
+    sprintf(initstring, "verbose=%d;cm_host=%s;cm_port=%d;max_client=%d;", 
+            VERBOSE, cm_host.c_str(), cm_port+rank, max_client);
 
 	adios_init_noxml (comm);
     adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 10);

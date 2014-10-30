@@ -39,12 +39,14 @@ int main (int argc, char ** argv)
     int    cm_port = 59997;
     string cm_remote_host = "localhost";
     int    cm_remote_port = 59999;
+    int    is_multi_writers = 0;
+    string remote_list = "";
     char   initstring [256];
 
     string adios_write_method = "MPI";
     enum ADIOS_READ_METHOD adios_read_method = ADIOS_READ_METHOD_BP;
 
-    while ((c = getopt (argc, argv, "h:p:s:t:w:r:")) != -1)
+    while ((c = getopt (argc, argv, "h:p:s:t:u:w:r:")) != -1)
     {
         switch (c)
         {
@@ -59,6 +61,10 @@ int main (int argc, char ** argv)
             break;
         case 't':
             cm_remote_port = atoi(optarg);
+            break;
+        case 'u':
+            is_multi_writers = 1;
+            remote_list = optarg;
             break;
         case 'w':
             adios_write_method = string(optarg);
@@ -97,8 +103,13 @@ int main (int argc, char ** argv)
     MPI_Comm_size (comm, &size);
 
 
-    sprintf(initstring, "verbose=%d;cm_host=%s;cm_port=%d;cm_remote_host=%s;cm_remote_port=%d;", 
-            VERBOSE, cm_host.c_str(), cm_port, cm_remote_host.c_str(), cm_remote_port);
+    if (!is_multi_writers)
+        sprintf(initstring, "verbose=%d;cm_host=%s;cm_port=%d;cm_remote_host=%s;cm_remote_port=%d;", 
+                VERBOSE, cm_host.c_str(), cm_port+rank, cm_remote_host.c_str(), cm_remote_port);
+    else
+        sprintf(initstring, "verbose=%d;cm_host=%s;cm_port=%d;remote_list=%s;", 
+                VERBOSE, cm_host.c_str(), cm_port+rank, remote_list.c_str());
+        
 
     adios_read_init_method (adios_read_method, comm, initstring);
 
