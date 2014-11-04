@@ -46,11 +46,12 @@ int main (int argc, char ** argv)
     string remote_list = "";
     int    max_client = 1;
     char   initstring [256];
+    int    verbose_level = 3;
 
     string adios_write_method = "MPI";
     enum ADIOS_READ_METHOD adios_read_method = ADIOS_READ_METHOD_BP;
 
-    while ((c = getopt (argc, argv, "h:p:s:t:m:w:r:")) != -1)
+    while ((c = getopt (argc, argv, "h:p:s:t:m:w:r:v:")) != -1)
     {
         switch (c)
         {
@@ -81,6 +82,9 @@ int main (int argc, char ** argv)
                 fprintf(stderr, "No read method: %s\n", optarg);
             }
             break;
+        case 'v':
+            verbose_level = atoi(optarg);
+            break;
         default:
             usage(basename(argv[0]));
             break;
@@ -106,7 +110,7 @@ int main (int argc, char ** argv)
 	strcpy (filename, "adios_globaltime.bp");
 
     sprintf(initstring, "verbose=%d;cm_host=%s;cm_port=%d;max_client=%d;", 
-            VERBOSE, cm_host.c_str(), cm_port+rank, max_client);
+            verbose_level, cm_host.c_str(), cm_port+rank, max_client);
 
 	adios_init_noxml (comm);
     adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 10);
@@ -125,8 +129,6 @@ int main (int argc, char ** argv)
                       ,"", adios_integer
                       ,0, 0, 0);
 
-    /* have to define O and temperature as many times as we 
-       write them within one step (twice) */
     adios_define_var (m_adios_group, "O"
                       ,"", adios_integer
                       ,0, 0, 0);
@@ -135,14 +137,14 @@ int main (int argc, char ** argv)
                       ,"", adios_double
                       ,"NX", "G", "O");
 
-    for (it =0; it < 5; it++) {
+    for (it =0; it < 5; it++) 
+    {
 
         for (i = 0; i < NX; i++)
-            t[i] = rank + it*0.1 + 0.01;
+            t[i] = rank + it + 1.0;
 
         adios_open (&m_adios_file, "restart", filename, "a", comm);
-        adios_groupsize = 4 + 4 + 4 + NX * 8
-            + 4 + 4 + 4 + NX * 8;
+        adios_groupsize = 4 + 4 + 4 + NX * 8;
         adios_group_size (m_adios_file, adios_groupsize, &adios_totalsize);
 
         adios_write(m_adios_file, "NX", (void *) &NX);

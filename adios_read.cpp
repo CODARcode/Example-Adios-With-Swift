@@ -17,8 +17,6 @@
 #include "adios_read.h"
 #include "adios_error.h"
 
-#define VERBOSE 3
-
 using namespace std;
 
 void usage(const char *argv0)
@@ -42,11 +40,12 @@ int main (int argc, char ** argv)
     int    is_multi_writers = 0;
     string remote_list = "";
     char   initstring [256];
+    int    verbose_level = 3;
 
     string adios_write_method = "MPI";
     enum ADIOS_READ_METHOD adios_read_method = ADIOS_READ_METHOD_BP;
 
-    while ((c = getopt (argc, argv, "h:p:s:t:u:w:r:")) != -1)
+    while ((c = getopt (argc, argv, "h:p:s:t:u:w:r:v:")) != -1)
     {
         switch (c)
         {
@@ -78,6 +77,9 @@ int main (int argc, char ** argv)
                 fprintf(stderr, "No read method: %s\n", optarg);
             }
             break;
+        case 'v':
+            verbose_level = atoi(optarg);
+            break;
         default:
             usage(basename(argv[0]));
             break;
@@ -105,10 +107,10 @@ int main (int argc, char ** argv)
 
     if (!is_multi_writers)
         sprintf(initstring, "verbose=%d;cm_host=%s;cm_port=%d;cm_remote_host=%s;cm_remote_port=%d;", 
-                VERBOSE, cm_host.c_str(), cm_port+rank, cm_remote_host.c_str(), cm_remote_port);
+                verbose_level, cm_host.c_str(), cm_port+rank, cm_remote_host.c_str(), cm_remote_port);
     else
         sprintf(initstring, "verbose=%d;cm_host=%s;cm_port=%d;remote_list=%s;", 
-                VERBOSE, cm_host.c_str(), cm_port+rank, remote_list.c_str());
+                verbose_level, cm_host.c_str(), cm_port+rank, remote_list.c_str());
         
 
     adios_read_init_method (adios_read_method, comm, initstring);
@@ -159,21 +161,16 @@ int main (int argc, char ** argv)
             adios_schedule_read (f, sel, "temperature", 0, 1, data);
             adios_perform_reads (f, 1);
 
-            if (rank == 0)
-                printf ("--------- Step: %d --------------------------------\n", 
-                        f->current_step);
+            printf ("--------- Step: %d --------------------------------\n", 
+                    f->current_step);
 
-            /*
             printf("rank=%d: [0:%lld] = [", rank, v->dims[0]);
-              for (i = 0; i < slice_size; i++) {
-              printf (" [");
-              for (j = 0; j < v->dims[1]; j++) {
-              printf ("%g ", *((double *)data + i * v->dims[1] + j));
-              }
-              printf ("]");
-              }
-              printf (" ]\n\n");
-            */
+            
+            for (i = 0; i < slice_size; i++) 
+            {
+                printf ("%g ", *((double *)data + i));
+            }
+            printf ("]\n\n");
 
             // advance to 1) next available step with 2) blocking wait
             adios_advance_step (f, 0, timeout_sec);
@@ -183,20 +180,19 @@ int main (int argc, char ** argv)
                         rank, adios_errmsg());
                 break; // quit while loop
             }
-
+            
         }
-
+        
         adios_read_close (f);
     }
-
+    
     if (rank==0) 
         printf ("We have processed %d steps\n", steps);
-
+    
     adios_read_finalize_method (adios_read_method);
     free (data);
     MPI_Finalize ();
-
+    
     return retval;
 }
-
 
