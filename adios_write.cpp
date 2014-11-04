@@ -20,7 +20,9 @@
 #include "dmalloc.h"
 #endif
 
+#ifndef VERBOSE
 #define VERBOSE 3
+#endif
 
 using namespace std;
 
@@ -46,7 +48,7 @@ int main (int argc, char ** argv)
     string remote_list = "";
     int    max_client = 1;
     char   initstring [256];
-    int    verbose_level = 3;
+    int    verbose_level = VERBOSE;
 
     string adios_write_method = "MPI";
     enum ADIOS_READ_METHOD adios_read_method = ADIOS_READ_METHOD_BP;
