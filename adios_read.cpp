@@ -17,10 +17,6 @@
 #include "adios_read.h"
 #include "adios_error.h"
 
-#ifndef VERBOSE
-#define VERBOSE 3
-#endif
-
 using namespace std;
 
 void usage(const char *argv0)
@@ -44,12 +40,13 @@ int main (int argc, char ** argv)
     int    is_multi_writers = 0;
     string remote_list = "";
     char   initstring [256];
-    int    verbose_level = VERBOSE;
+    int    verbose_level = 3;
+    string cm_transport = "TCP";
 
     string adios_write_method = "MPI";
     enum ADIOS_READ_METHOD adios_read_method = ADIOS_READ_METHOD_BP;
 
-    while ((c = getopt (argc, argv, "h:p:s:t:u:w:r:v:")) != -1)
+    while ((c = getopt (argc, argv, "h:p:s:t:u:w:r:v:T:")) != -1)
     {
         switch (c)
         {
@@ -84,6 +81,9 @@ int main (int argc, char ** argv)
         case 'v':
             verbose_level = atoi(optarg);
             break;
+        case 'T':
+            cm_transport = optarg;
+            break;
         default:
             usage(basename(argv[0]));
             break;
@@ -110,11 +110,11 @@ int main (int argc, char ** argv)
 
 
     if (!is_multi_writers)
-        sprintf(initstring, "verbose=%d;cm_host=%s;cm_port=%d;cm_remote_host=%s;cm_remote_port=%d;", 
-                verbose_level, cm_host.c_str(), cm_port+rank, cm_remote_host.c_str(), cm_remote_port);
+        sprintf(initstring, "verbose=%d;cm_host=%s;cm_port=%d;cm_remote_host=%s;cm_remote_port=%d;transport=%s;", 
+                verbose_level, cm_host.c_str(), cm_port+rank, cm_remote_host.c_str(), cm_remote_port, cm_transport.c_str());
     else
-        sprintf(initstring, "verbose=%d;cm_host=%s;cm_port=%d;remote_list=%s;", 
-                verbose_level, cm_host.c_str(), cm_port+rank, remote_list.c_str());
+        sprintf(initstring, "verbose=%d;cm_host=%s;cm_port=%d;remote_list=%s;transport=%s;", 
+                verbose_level, cm_host.c_str(), cm_port+rank, remote_list.c_str(),cm_transport.c_str());
         
 
     adios_read_init_method (adios_read_method, comm, initstring);
