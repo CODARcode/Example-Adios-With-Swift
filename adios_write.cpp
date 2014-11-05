@@ -20,6 +20,10 @@
 #include "dmalloc.h"
 #endif
 
+#ifndef _NX
+#define _NX 1000
+#endif
+
 using namespace std;
 
 void usage(const char *argv0)
@@ -46,6 +50,7 @@ int main (int argc, char ** argv)
     char   initstring [256];
     int    verbose_level = 3;
     string cm_transport = "TCP";
+    int    interval_sec = 5;
 
     string adios_write_method = "MPI";
     enum ADIOS_READ_METHOD adios_read_method = ADIOS_READ_METHOD_BP;
@@ -87,6 +92,9 @@ int main (int argc, char ** argv)
         case 'T':
             cm_transport = optarg;
             break;
+        case 'i':
+            interval_sec = atoi(optarg);
+            break;
         default:
             usage(basename(argv[0]));
             break;
@@ -95,7 +103,7 @@ int main (int argc, char ** argv)
 
 	char        filename [256];
 	int         rank, size, i;
-	int         NX = 10, G, O; 
+	int         NX = _NX, G, O; 
 	double      t[NX];
 	MPI_Comm    comm = MPI_COMM_WORLD;
 
@@ -108,6 +116,7 @@ int main (int argc, char ** argv)
 	MPI_Comm_size (comm, &size);
 
     G = NX * size;
+    if (rank==0) printf("NX = %d\n", NX);
 
 	strcpy (filename, "adios_globaltime.bp");
 
@@ -145,6 +154,9 @@ int main (int argc, char ** argv)
         for (i = 0; i < NX; i++)
             t[i] = rank + it + 1.0;
 
+        MPI_Barrier(comm); 
+        double t_start = MPI_Wtime();
+
         adios_open (&m_adios_file, "restart", filename, "a", comm);
         adios_groupsize = 4 + 4 + 4 + NX * 8;
         adios_group_size (m_adios_file, adios_groupsize, &adios_totalsize);
@@ -156,7 +168,16 @@ int main (int argc, char ** argv)
         adios_write(m_adios_file, "temperature", t);
 
         adios_close (m_adios_file);
-        MPI_Barrier (comm);
+
+        MPI_Barrier(comm);
+        double t_end = MPI_Wtime();
+        double t_elap = t_end - t_start;
+
+        if (rank==0)
+            printf("[%d] Elapsed %.03f seconds, throughput %''.03f KB/sec\n", 
+                   it, t_elap, (double)adios_groupsize/t_elap/1024.0);
+        
+        sleep(interval_sec);
     }
 
 	adios_finalize (rank);

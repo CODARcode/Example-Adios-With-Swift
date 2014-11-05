@@ -140,11 +140,6 @@ int main (int argc, char ** argv)
     {
         /* process file here... */
         v = adios_inq_var (f, "temperature");
-        //adios_inq_var_blockinfo (f, v);
-
-        printf ("ndim = %d\n",  v->ndim);
-        //printf ("nsteps = %d\n",  v->nsteps);
-        printf ("dims[%llu]\n",  v->dims[0]);
 
         uint64_t slice_size = v->dims[0]/size;
         if (rank == size-1)
@@ -152,8 +147,6 @@ int main (int argc, char ** argv)
 
         start[0] = rank * slice_size;
         count[0] = slice_size;
-        //start[1] = 0;
-        //count[1] = v->dims[1];
 
         data = malloc (slice_size * v->dims[0] * 8);
 
@@ -165,16 +158,14 @@ int main (int argc, char ** argv)
             adios_schedule_read (f, sel, "temperature", 0, 1, data);
             adios_perform_reads (f, 1);
 
-            printf ("--------- Step: %d --------------------------------\n", 
-                    f->current_step);
-
-            printf("rank=%d: [0:%lld] = [", rank, v->dims[0]);
-            
+            double sum = 0.0;
             for (i = 0; i < slice_size; i++) 
             {
-                printf ("%g ", *((double *)data + i));
+                sum += *((double *)data + i);
             }
-            printf ("]\n\n");
+
+            printf("Step:%d, rank=%d: sum(data[%lld:%lld]) = %.01f\n", 
+                   f->current_step, rank, start[0], start[0]+count[0]-1, sum);
 
             // advance to 1) next available step with 2) blocking wait
             adios_advance_step (f, 0, timeout_sec);

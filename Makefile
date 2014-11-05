@@ -1,5 +1,5 @@
 CXX = mpicxx
-CPPFLAGS = -g -DVERBOSE=5
+CPPFLAGS = -g -DVERBOSE=5 -D_NX=1000
 
 ADIOS_INC = $(shell adios_config -c)
 ADIOS_LIB = $(shell adios_config -l)
