@@ -42,11 +42,12 @@ int main (int argc, char ** argv)
     char   initstring [256];
     int    verbose_level = 3;
     string cm_transport = "TCP";
+    float timeout_sec = 10.0; 
 
     string adios_write_method = "MPI";
     enum ADIOS_READ_METHOD adios_read_method = ADIOS_READ_METHOD_BP;
 
-    while ((c = getopt (argc, argv, "h:p:s:t:u:w:r:v:T:")) != -1)
+    while ((c = getopt (argc, argv, "h:p:s:t:u:w:r:v:T:o:")) != -1)
     {
         switch (c)
         {
@@ -84,6 +85,9 @@ int main (int argc, char ** argv)
         case 'T':
             cm_transport = optarg;
             break;
+        case 'o':
+            timeout_sec = atoi(optarg);
+            break;
         default:
             usage(basename(argv[0]));
             break;
@@ -98,7 +102,6 @@ int main (int argc, char ** argv)
 
     int steps = 0;
     int retval = 0;
-    float timeout_sec = 10.0; 
 
     void * data = NULL;
     uint64_t start[2], count[2];
