@@ -144,7 +144,7 @@ int main (int argc, char ** argv)
 
         printf ("ndim = %d\n",  v->ndim);
         //printf ("nsteps = %d\n",  v->nsteps);
-        printf ("dims[%llu]\n",  v->dims[0]);
+        printf ("dims[%lu]\n",  v->dims[0]);
 
         uint64_t slice_size = v->dims[0]/size;
         if (rank == size-1)
@@ -168,7 +168,7 @@ int main (int argc, char ** argv)
             printf ("--------- Step: %d --------------------------------\n", 
                     f->current_step);
 
-            printf("rank=%d: [0:%lld] = [", rank, v->dims[0]);
+            printf("rank=%d: [0:%lu] = [", rank, v->dims[0]);
             
             for (i = 0; i < slice_size; i++) 
             {
