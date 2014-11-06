@@ -7,6 +7,7 @@
 
 /* ADIOS ICEE Example
  */
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -151,7 +152,8 @@ int main (int argc, char ** argv)
         start[0] = rank * slice_size;
         count[0] = slice_size;
 
-        data = malloc (slice_size * v->dims[0] * 8);
+        data = malloc (slice_size * sizeof(double));
+	assert(data != NULL);
 
         /* Processing loop over the steps (we are already in the first one) */
         while (adios_errno != err_end_of_stream) {
