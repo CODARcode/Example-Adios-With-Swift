@@ -7,6 +7,7 @@
 
 /* ADIOS ICEE Example
  */
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -18,10 +19,6 @@
 
 #ifdef DMALLOC
 #include "dmalloc.h"
-#endif
-
-#ifndef _NX
-#define _NX 1000
 #endif
 
 using namespace std;
@@ -51,11 +48,12 @@ int main (int argc, char ** argv)
     int    verbose_level = 3;
     string cm_transport = "TCP";
     int    interval_sec = 5;
+	int    NX = 1000;
 
     string adios_write_method = "MPI";
     enum ADIOS_READ_METHOD adios_read_method = ADIOS_READ_METHOD_BP;
 
-    while ((c = getopt (argc, argv, "h:p:s:t:m:w:r:v:T:")) != -1)
+    while ((c = getopt (argc, argv, "h:p:s:t:m:w:r:v:T:i:n:")) != -1)
     {
         switch (c)
         {
@@ -95,6 +93,9 @@ int main (int argc, char ** argv)
         case 'i':
             interval_sec = atoi(optarg);
             break;
+        case 'n':
+            NX = atoi(optarg);
+            break;
         default:
             usage(basename(argv[0]));
             break;
@@ -103,8 +104,9 @@ int main (int argc, char ** argv)
 
 	char        filename [256];
 	int         rank, size, i;
-	int         NX = _NX, G, O; 
-	double      t[NX];
+	int         G, O; 
+	double      *t = (double *) malloc(NX * sizeof(double));
+	assert(t != NULL);
 	MPI_Comm    comm = MPI_COMM_WORLD;
 
 	/* ADIOS variables declarations for matching gwrite_temperature.ch */
