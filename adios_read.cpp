@@ -40,7 +40,8 @@ int main (int argc, char ** argv)
     int    cm_remote_port = 59999;
     int    is_multi_writers = 0;
     string remote_list = "";
-    char   initstring [256];
+    string attr_list = "";
+    char   initstring [512];
     int    verbose_level = 3;
     string cm_transport = "TCP";
     float timeout_sec = 10.0; 
@@ -48,7 +49,7 @@ int main (int argc, char ** argv)
     string adios_write_method = "MPI";
     enum ADIOS_READ_METHOD adios_read_method = ADIOS_READ_METHOD_BP;
 
-    while ((c = getopt (argc, argv, "h:p:s:t:u:w:r:v:T:o:")) != -1)
+    while ((c = getopt (argc, argv, "h:p:s:t:u:a:w:r:v:T:o:")) != -1)
     {
         switch (c)
         {
@@ -66,7 +67,11 @@ int main (int argc, char ** argv)
             break;
         case 'u':
             is_multi_writers = 1;
-            remote_list = optarg;
+            remote_list = string(optarg);
+            break;
+        case 'a':
+            is_multi_writers = 1;
+            attr_list = string(optarg);
             break;
         case 'w':
             adios_write_method = string(optarg);
@@ -117,8 +122,8 @@ int main (int argc, char ** argv)
         sprintf(initstring, "verbose=%d;cm_host=%s;cm_port=%d;cm_remote_host=%s;cm_remote_port=%d;transport=%s;", 
                 verbose_level, cm_host.c_str(), cm_port+rank, cm_remote_host.c_str(), cm_remote_port, cm_transport.c_str());
     else
-        sprintf(initstring, "verbose=%d;cm_host=%s;cm_port=%d;remote_list=%s;transport=%s;", 
-                verbose_level, cm_host.c_str(), cm_port+rank, remote_list.c_str(),cm_transport.c_str());
+        sprintf(initstring, "verbose=%d;cm_host=%s;cm_port=%d;remote_list=%s;attr_list=%s;transport=%s;", 
+                verbose_level, cm_host.c_str(), cm_port+rank, remote_list.c_str(), attr_list.c_str(), cm_transport.c_str());
         
 
     adios_read_init_method (adios_read_method, comm, initstring);

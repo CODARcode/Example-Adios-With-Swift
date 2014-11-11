@@ -44,7 +44,7 @@ int main (int argc, char ** argv)
     int    is_multi_writers = 0;
     string remote_list = "";
     int    max_client = 1;
-    char   initstring [256];
+    char   initstring [512];
     int    verbose_level = 3;
     string cm_transport = "TCP";
     int    interval_sec = 5;
