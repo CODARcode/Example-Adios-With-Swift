@@ -121,6 +121,8 @@ int main (int argc, char ** argv)
 	MPI_Comm_rank (comm, &rank);
 	MPI_Comm_size (comm, &size);
 
+    setlocale(LC_NUMERIC, "");
+
     G = NX * size;
     if (rank==0) printf("NX = %d\n", NX);
 
@@ -180,7 +182,7 @@ int main (int argc, char ** argv)
         double t_elap = t_end - t_start;
 
         if (rank==0)
-            printf("[%d] Elapsed %.03f seconds, throughput %''.03f KB/sec\n", 
+            printf("[%d] Elapsed %.03f seconds, throughput %'.03f KB/sec\n", 
                    it, t_elap, (double)adios_groupsize/t_elap/1024.0);
         
         sleep(interval_sec);
