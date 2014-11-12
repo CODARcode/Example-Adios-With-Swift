@@ -44,12 +44,14 @@ int main (int argc, char ** argv)
     char   initstring [512];
     int    verbose_level = 3;
     string cm_transport = "TCP";
-    float timeout_sec = 10.0; 
+    float  timeout_sec = 10.0; 
+    int    use_native_contact = 0;
+    int    is_passive = 0;
 
     string adios_write_method = "MPI";
     enum ADIOS_READ_METHOD adios_read_method = ADIOS_READ_METHOD_BP;
 
-    while ((c = getopt (argc, argv, "h:p:s:t:u:a:w:r:v:T:o:")) != -1)
+    while ((c = getopt (argc, argv, "h:p:s:t:u:a:w:r:v:T:o:nP")) != -1)
     {
         switch (c)
         {
@@ -94,6 +96,12 @@ int main (int argc, char ** argv)
         case 'o':
             timeout_sec = atoi(optarg);
             break;
+        case 'n':
+            use_native_contact = 1;
+            break;
+        case 'P':
+            is_passive = 1;
+            break;
         default:
             usage(basename(argv[0]));
             break;
@@ -119,11 +127,11 @@ int main (int argc, char ** argv)
 
 
     if (!is_multi_writers)
-        sprintf(initstring, "verbose=%d;cm_host=%s;cm_port=%d;cm_remote_host=%s;cm_remote_port=%d;transport=%s;", 
-                verbose_level, cm_host.c_str(), cm_port+rank, cm_remote_host.c_str(), cm_remote_port, cm_transport.c_str());
+        sprintf(initstring, "verbose=%d;cm_host=%s;cm_port=%d;cm_remote_host=%s;cm_remote_port=%d;transport=%s;use_native_contact=%d;is_passive=%d", 
+                verbose_level, cm_host.c_str(), cm_port+rank, cm_remote_host.c_str(), cm_remote_port, cm_transport.c_str(), use_native_contact, is_passive);
     else
-        sprintf(initstring, "verbose=%d;cm_host=%s;cm_port=%d;remote_list=%s;attr_list=%s;transport=%s;", 
-                verbose_level, cm_host.c_str(), cm_port+rank, remote_list.c_str(), attr_list.c_str(), cm_transport.c_str());
+        sprintf(initstring, "verbose=%d;cm_host=%s;cm_port=%d;remote_list=%s;attr_list=%s;transport=%s;use_native_contact=%d;is_passive=%d", 
+                verbose_level, cm_host.c_str(), cm_port+rank, remote_list.c_str(), attr_list.c_str(), cm_transport.c_str(), use_native_contact, is_passive);
         
 
     adios_read_init_method (adios_read_method, comm, initstring);

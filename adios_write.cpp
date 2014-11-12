@@ -49,11 +49,12 @@ int main (int argc, char ** argv)
     string cm_transport = "TCP";
     int    interval_sec = 5;
 	int    NX = 1000;
+    int    is_passive = 0;
 
     string adios_write_method = "MPI";
     enum ADIOS_READ_METHOD adios_read_method = ADIOS_READ_METHOD_BP;
 
-    while ((c = getopt (argc, argv, "h:p:s:t:m:w:r:v:T:i:n:")) != -1)
+    while ((c = getopt (argc, argv, "h:p:s:t:m:w:r:v:T:i:n:P")) != -1)
     {
         switch (c)
         {
@@ -96,6 +97,9 @@ int main (int argc, char ** argv)
         case 'n':
             NX = atoi(optarg);
             break;
+        case 'P':
+            is_passive = 1;
+            break;
         default:
             usage(basename(argv[0]));
             break;
@@ -122,8 +126,8 @@ int main (int argc, char ** argv)
 
 	strcpy (filename, "adios_globaltime.bp");
 
-    sprintf(initstring, "verbose=%d;cm_host=%s;cm_port=%d;max_client=%d;transport=%s;", 
-            verbose_level, cm_host.c_str(), cm_port+rank, max_client, cm_transport.c_str());
+    sprintf(initstring, "verbose=%d;cm_host=%s;cm_port=%d;max_client=%d;transport=%s;is_passive=%d", 
+            verbose_level, cm_host.c_str(), cm_port+rank, max_client, cm_transport.c_str(), is_passive);
 
 	adios_init_noxml (comm);
     adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 10);
