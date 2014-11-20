@@ -127,8 +127,8 @@ int main (int argc, char ** argv)
 
 
     if (!is_multi_writers)
-        sprintf(initstring, "verbose=%d;cm_host=%s;cm_port=%d;cm_remote_host=%s;cm_remote_port=%d;transport=%s;use_native_contact=%d;is_passive=%d", 
-                verbose_level, cm_host.c_str(), cm_port+rank, cm_remote_host.c_str(), cm_remote_port, cm_transport.c_str(), use_native_contact, is_passive);
+        sprintf(initstring, "verbose=%d;cm_host=%s;cm_port=%d;cm_remote_host=%s;cm_remote_port=%d;use_native_contact=%d;is_passive=%d", 
+                verbose_level, cm_host.c_str(), cm_port+rank, cm_remote_host.c_str(), cm_remote_port, use_native_contact, is_passive);
     else
         sprintf(initstring, "verbose=%d;cm_host=%s;cm_port=%d;remote_list=%s;attr_list=%s;transport=%s;use_native_contact=%d;is_passive=%d", 
                 verbose_level, cm_host.c_str(), cm_port+rank, remote_list.c_str(), attr_list.c_str(), cm_transport.c_str(), use_native_contact, is_passive);
