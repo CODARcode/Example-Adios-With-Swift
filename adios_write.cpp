@@ -97,7 +97,29 @@ int main (int argc, char ** argv)
             interval_sec = atoi(optarg);
             break;
         case 'n':
-            NX = atoi(optarg);
+        {
+            float num, unit = 1.0;
+            char ch;
+            sscanf(optarg, "%f%c", &num, &ch);
+            switch (ch)
+            {
+            case 'k':
+            case 'K':
+                unit = 1000;
+                break;
+            case 'm':
+            case 'M':
+                unit = 1000 * 1000;
+                break;
+            case 'g':
+            case 'G':
+                unit = 1000 * 1000 * 1000;
+                break;
+            }
+
+            NX = (int) (num * unit);
+            break;
+        }
             break;
         case 'P':
             is_passive = 1;
@@ -123,7 +145,7 @@ int main (int argc, char ** argv)
 	MPI_Comm_rank (comm, &rank);
 	MPI_Comm_size (comm, &size);
 
-    setlocale(LC_NUMERIC, "");
+    setlocale(LC_NUMERIC, "en_US.UTF-8");
 
     G = NX * size;
     if (rank==0) printf("NX = %d\n", NX);
@@ -134,7 +156,7 @@ int main (int argc, char ** argv)
             verbose_level, cm_host.c_str(), cm_port+rank, max_client, cm_transport.c_str(), is_passive);
 
 	adios_init_noxml (comm);
-    adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 10);
+    adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 1000);
 
     int64_t       m_adios_group;
     int64_t       m_adios_file;
@@ -158,7 +180,7 @@ int main (int argc, char ** argv)
                       ,"", adios_double
                       ,"NX", "G", "O");
 
-    for (it =0; it < 5; it++) 
+    for (it =0; it < 10; it++) 
     {
 
         for (i = 0; i < NX; i++)
@@ -184,8 +206,8 @@ int main (int argc, char ** argv)
         double t_elap = t_end - t_start;
 
         if (rank==0)
-            printf("[%d] Elapsed %.03f seconds, throughput %'.03f KB/sec\n", 
-                   it, t_elap, (double)adios_groupsize/t_elap/1024.0);
+            printf("[%d] Wrote %'ld bytes, elapsed %.03f seconds, throughput %'.03f KB/sec\n", 
+                   it, adios_groupsize, t_elap, (double)adios_groupsize/t_elap/1024.0);
         
         sleep(interval_sec);
     }
