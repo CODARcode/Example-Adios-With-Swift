@@ -13,9 +13,11 @@
 #include <string.h>
 #include <unistd.h> 
 #include <libgen.h>
+#include <locale.h>
 #include "mpi.h"
 #include "adios.h"
 #include "adios_read.h"
+#include <string>
 
 #ifdef DMALLOC
 #include "dmalloc.h"

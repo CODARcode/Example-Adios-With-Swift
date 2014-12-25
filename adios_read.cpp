@@ -13,10 +13,12 @@
 #include <string.h>
 #include <unistd.h> 
 #include <libgen.h>
+#include <locale.h>
 #include "mpi.h"
 #include "adios.h"
 #include "adios_read.h"
 #include "adios_error.h"
+#include <string>
 
 using namespace std;
 
