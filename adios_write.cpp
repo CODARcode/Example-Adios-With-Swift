@@ -206,7 +206,7 @@ int main (int argc, char ** argv)
         double t_elap = t_end - t_start;
 
         if (rank==0)
-            printf("[%d] Wrote %'ld bytes, elapsed %.03f seconds, throughput %'.03f KB/sec\n", 
+            printf("[%d] Wrote %'lld bytes, elapsed %.03f seconds, throughput %'.03f KB/sec\n", 
                    it, adios_groupsize, t_elap, (double)adios_groupsize/t_elap/1024.0);
         
         sleep(interval_sec);
