@@ -50,7 +50,7 @@ const char *icee_args_info_help[] = {
   "      --nclient=INT         maximum number of clients",
   "      --isnative            use native contact  (default=off)",
   "      --remotelist=STRING   remote list",
-  "      --attrlist=STRING     attr list",
+  "  -a, --attrlist=STRING     attr list",
     0
 };
 
@@ -603,11 +603,11 @@ icee_cmdline_parser_internal (
         { "nclient",	1, NULL, 0 },
         { "isnative",	0, NULL, 0 },
         { "remotelist",	1, NULL, 0 },
-        { "attrlist",	1, NULL, 0 },
+        { "attrlist",	1, NULL, 'a' },
         { 0,  0, 0, 0 }
       };
 
-      c = getopt_long (argc, argv, "hVcw:r:n:p:s:t:T:v:e:", long_options, &option_index);
+      c = getopt_long (argc, argv, "hVcw:r:n:p:s:t:T:v:e:a:", long_options, &option_index);
 
       if (c == -1) break;	/* Exit from `while (1)' loop.  */
 
@@ -741,6 +741,18 @@ icee_cmdline_parser_internal (
             goto failure;
         
           break;
+        case 'a':	/* attr list.  */
+        
+        
+          if (update_arg( (void *)&(args_info->attrlist_arg), 
+               &(args_info->attrlist_orig), &(args_info->attrlist_given),
+              &(local_args_info.attrlist_given), optarg, 0, 0, ARG_STRING,
+              check_ambiguity, override, 0, 0,
+              "attrlist", 'a',
+              additional_error))
+            goto failure;
+        
+          break;
 
         case 0:	/* Long option with no short option */
           /* Timeout.  */
@@ -819,20 +831,6 @@ icee_cmdline_parser_internal (
                 &(local_args_info.remotelist_given), optarg, 0, 0, ARG_STRING,
                 check_ambiguity, override, 0, 0,
                 "remotelist", '-',
-                additional_error))
-              goto failure;
-          
-          }
-          /* attr list.  */
-          else if (strcmp (long_options[option_index].name, "attrlist") == 0)
-          {
-          
-          
-            if (update_arg( (void *)&(args_info->attrlist_arg), 
-                 &(args_info->attrlist_orig), &(args_info->attrlist_given),
-                &(local_args_info.attrlist_given), optarg, 0, 0, ARG_STRING,
-                check_ambiguity, override, 0, 0,
-                "attrlist", '-',
                 additional_error))
               goto failure;
           
