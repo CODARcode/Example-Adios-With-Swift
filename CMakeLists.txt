@@ -12,16 +12,10 @@ include_directories (${ADIOS_INCLUDE_PATH})
 find_package (MPI REQUIRED)
 include_directories (${MPI_CXX_INCLUDE_PATH})
 
-add_executable (adios_write
-  adios_write.cpp
+add_executable (adios_icee
+  adios_icee.cpp
+  icee_cmdline.c
   ${HEADER_FILES})
-target_link_libraries (adios_write
-  ${ADIOS_LIBRARIES}
-  ${MPI_CXX_LIBRARIES})
-
-add_executable (adios_read
-  adios_read.cpp
-  ${HEADER_FILES})
-target_link_libraries (adios_read
+target_link_libraries (adios_icee
   ${ADIOS_LIBRARIES}
   ${MPI_CXX_LIBRARIES})

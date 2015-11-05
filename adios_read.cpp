@@ -19,7 +19,7 @@
 #include "adios_read.h"
 #include "adios_error.h"
 #include <string>
-#include "cmdline.h"
+#include "icee_cmdline.h"
 
 using namespace std;
 
@@ -34,10 +34,9 @@ void usage(const char *argv0)
 
 int main (int argc, char ** argv) 
 {
+    struct icee_args_info args_info;
 
-    struct gengetopt_args_info args_info;
-
-    if (cmdline_parser (argc, argv, &args_info) != 0)
+    if (icee_cmdline_parser (argc, argv, &args_info) != 0)
         exit(1) ;
 
     int c;
