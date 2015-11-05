@@ -24,15 +24,6 @@
 
 using namespace std;
 
-void usage(const char *argv0)
-{
-    fprintf(stderr, "usage: %s\n", argv0);
-    fprintf(stderr, "Options:\n");
-    fprintf(stderr, "-w [ MPI | ICEE ]\n");
-    fprintf(stderr, "-r [ BP | ICEE ]\n");
-    exit (1);
-}
-
 int main (int argc, char ** argv)
 {
     struct icee_args_info args_info;
@@ -84,14 +75,12 @@ int main (int argc, char ** argv)
     if (args_info.host_given)
         s << "cm_host=" << args_info.host_arg << ";";
     
-    if (args_info.port_given)
-        s << "cm_port=" << args_info.port_arg + rank << ";";
+    s << "cm_port=" << args_info.port_arg + rank << ";";
     
     if (args_info.remotehost_given)
         s << "cm_remote_host=" << args_info.remotehost_arg << ";";
     
-    if (args_info.remoteport_given)
-        s << "cm_remote_port=" << args_info.remoteport_arg + rank << ";";
+    s << "cm_remote_port=" << args_info.remoteport_arg + rank << ";";
     
     if (args_info.method_given)
         s << "transport=" << args_info.method_arg << ";";
