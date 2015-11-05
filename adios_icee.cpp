@@ -40,11 +40,11 @@ int main (int argc, char ** argv)
     if (icee_cmdline_parser (argc, argv, &args_info) != 0)
         exit(1) ;
 
-    string adios_write_method = "MPI";
+    string adios_write_method = "POSIX1";
     enum ADIOS_READ_METHOD adios_read_method = ADIOS_READ_METHOD_BP;
-    float  timeout_sec = 10.0;
+    float  timeout_sec;
     
-    int    NX = 1000;
+    int    NX;
     int    interval_sec = 5;
     
     if (args_info.writemethod_given)
@@ -61,11 +61,8 @@ int main (int argc, char ** argv)
         }
     }
     
-    if (args_info.len_given)
-        NX = args_info.len_arg;
-
-    if (args_info.timeout_given)
-        timeout_sec = args_info.timeout_arg;
+    NX = args_info.len_arg;
+    timeout_sec = args_info.timeout_arg;
 
     int         rank, size;
     MPI_Comm    comm = MPI_COMM_WORLD;
