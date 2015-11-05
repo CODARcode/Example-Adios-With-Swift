@@ -56,7 +56,7 @@ struct icee_args_info
   char * host_arg;	/**< @brief local hostname (default='localhost').  */
   char * host_orig;	/**< @brief local hostname original value given at command line.  */
   const char *host_help; /**< @brief local hostname help description.  */
-  int port_arg;	/**< @brief local port (default='59800').  */
+  int port_arg;	/**< @brief local port (default='59900').  */
   char * port_orig;	/**< @brief local port original value given at command line.  */
   const char *port_help; /**< @brief local port help description.  */
   char * remotehost_arg;	/**< @brief remote hostname (default='localhost').  */

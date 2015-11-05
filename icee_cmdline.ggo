@@ -1,0 +1,24 @@
+# 
+package "icee"
+version "0.1"
+
+args "--func-name=icee_cmdline_parser --file=icee_cmdline --arg-struct-name=icee_args_info"
+
+option "client" c "Client mode" flag off
+option "writemethod" w "ADIOS write method" string optional default="POSIX1"
+option "readmethod" r "ADIOS read method" string optional default="BP"
+option "len" n "array length" int optional default="1000"
+option "timeout" - "Timeout" float optional default="10.0"
+
+option "host" - "local hostname" string optional default="localhost"
+option "port" p "local port" int optional default="59900"
+option "remotehost" s "remote hostname" string optional default="localhost"
+option "remoteport" t "remote port" int optional default="59900"
+option "method" T "EVPath method" string optional default="TCP"
+option "verbose" v "verbosity level" int optional default="3"
+option "contact" e "EVPath contact string" string optional
+option "passive" - "enable passive mode" flag off
+option "nclient" - "maximum number of clients" int optional 
+option "isnative" - "use native contact" flag off
+option "remotelist" - "remote list" string optional
+option "attrlist" a "attr list" string optional

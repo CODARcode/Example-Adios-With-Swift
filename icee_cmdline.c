@@ -40,7 +40,7 @@ const char *icee_args_info_help[] = {
   "  -n, --len=INT             array length  (default=`1000')",
   "      --timeout=FLOAT       Timeout  (default=`10.0')",
   "      --host=STRING         local hostname  (default=`localhost')",
-  "  -p, --port=INT            local port  (default=`59800')",
+  "  -p, --port=INT            local port  (default=`59900')",
   "  -s, --remotehost=STRING   remote hostname  (default=`localhost')",
   "  -t, --remoteport=INT      remote port  (default=`59900')",
   "  -T, --method=STRING       EVPath method  (default=`TCP')",
@@ -113,7 +113,7 @@ void clear_args (struct icee_args_info *args_info)
   args_info->timeout_orig = NULL;
   args_info->host_arg = gengetopt_strdup ("localhost");
   args_info->host_orig = NULL;
-  args_info->port_arg = 59800;
+  args_info->port_arg = 59900;
   args_info->port_orig = NULL;
   args_info->remotehost_arg = gengetopt_strdup ("localhost");
   args_info->remotehost_orig = NULL;
@@ -676,7 +676,7 @@ icee_cmdline_parser_internal (
         
           if (update_arg( (void *)&(args_info->port_arg), 
                &(args_info->port_orig), &(args_info->port_given),
-              &(local_args_info.port_given), optarg, 0, "59800", ARG_INT,
+              &(local_args_info.port_given), optarg, 0, "59900", ARG_INT,
               check_ambiguity, override, 0, 0,
               "port", 'p',
               additional_error))
