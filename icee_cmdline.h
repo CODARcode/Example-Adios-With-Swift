@@ -53,6 +53,9 @@ struct icee_args_info
   float timeout_arg;	/**< @brief Timeout (default='10.0').  */
   char * timeout_orig;	/**< @brief Timeout original value given at command line.  */
   const char *timeout_help; /**< @brief Timeout help description.  */
+  int sleep_arg;	/**< @brief interval time (default='5').  */
+  char * sleep_orig;	/**< @brief interval time original value given at command line.  */
+  const char *sleep_help; /**< @brief interval time help description.  */
   char * host_arg;	/**< @brief local hostname (default='localhost').  */
   char * host_orig;	/**< @brief local hostname original value given at command line.  */
   const char *host_help; /**< @brief local hostname help description.  */
@@ -95,6 +98,7 @@ struct icee_args_info
   unsigned int readmethod_given ;	/**< @brief Whether readmethod was given.  */
   unsigned int len_given ;	/**< @brief Whether len was given.  */
   unsigned int timeout_given ;	/**< @brief Whether timeout was given.  */
+  unsigned int sleep_given ;	/**< @brief Whether sleep was given.  */
   unsigned int host_given ;	/**< @brief Whether host was given.  */
   unsigned int port_given ;	/**< @brief Whether port was given.  */
   unsigned int remotehost_given ;	/**< @brief Whether remotehost was given.  */

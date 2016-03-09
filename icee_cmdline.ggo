@@ -9,6 +9,7 @@ option "writemethod" w "ADIOS write method" string optional default="POSIX1"
 option "readmethod" r "ADIOS read method" string optional default="BP"
 option "len" n "array length" int optional default="1000"
 option "timeout" - "Timeout" float optional default="10.0"
+option "sleep" - "interval time" int optional default="5"
 
 option "host" - "local hostname" string optional default="localhost"
 option "port" p "local port" int optional default="59900"

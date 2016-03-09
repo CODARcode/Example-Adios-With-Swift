@@ -39,6 +39,7 @@ const char *icee_args_info_help[] = {
   "  -r, --readmethod=STRING   ADIOS read method  (default=`BP')",
   "  -n, --len=INT             array length  (default=`1000')",
   "      --timeout=FLOAT       Timeout  (default=`10.0')",
+  "      --sleep=INT           interval time  (default=`5')",
   "      --host=STRING         local hostname  (default=`localhost')",
   "  -p, --port=INT            local port  (default=`59900')",
   "  -s, --remotehost=STRING   remote hostname  (default=`localhost')",
@@ -84,6 +85,7 @@ void clear_given (struct icee_args_info *args_info)
   args_info->readmethod_given = 0 ;
   args_info->len_given = 0 ;
   args_info->timeout_given = 0 ;
+  args_info->sleep_given = 0 ;
   args_info->host_given = 0 ;
   args_info->port_given = 0 ;
   args_info->remotehost_given = 0 ;
@@ -111,6 +113,8 @@ void clear_args (struct icee_args_info *args_info)
   args_info->len_orig = NULL;
   args_info->timeout_arg = 10.0;
   args_info->timeout_orig = NULL;
+  args_info->sleep_arg = 5;
+  args_info->sleep_orig = NULL;
   args_info->host_arg = gengetopt_strdup ("localhost");
   args_info->host_orig = NULL;
   args_info->port_arg = 59900;
@@ -147,18 +151,19 @@ void init_args_info(struct icee_args_info *args_info)
   args_info->readmethod_help = icee_args_info_help[4] ;
   args_info->len_help = icee_args_info_help[5] ;
   args_info->timeout_help = icee_args_info_help[6] ;
-  args_info->host_help = icee_args_info_help[7] ;
-  args_info->port_help = icee_args_info_help[8] ;
-  args_info->remotehost_help = icee_args_info_help[9] ;
-  args_info->remoteport_help = icee_args_info_help[10] ;
-  args_info->method_help = icee_args_info_help[11] ;
-  args_info->verbose_help = icee_args_info_help[12] ;
-  args_info->contact_help = icee_args_info_help[13] ;
-  args_info->passive_help = icee_args_info_help[14] ;
-  args_info->nclient_help = icee_args_info_help[15] ;
-  args_info->isnative_help = icee_args_info_help[16] ;
-  args_info->remotelist_help = icee_args_info_help[17] ;
-  args_info->attrlist_help = icee_args_info_help[18] ;
+  args_info->sleep_help = icee_args_info_help[7] ;
+  args_info->host_help = icee_args_info_help[8] ;
+  args_info->port_help = icee_args_info_help[9] ;
+  args_info->remotehost_help = icee_args_info_help[10] ;
+  args_info->remoteport_help = icee_args_info_help[11] ;
+  args_info->method_help = icee_args_info_help[12] ;
+  args_info->verbose_help = icee_args_info_help[13] ;
+  args_info->contact_help = icee_args_info_help[14] ;
+  args_info->passive_help = icee_args_info_help[15] ;
+  args_info->nclient_help = icee_args_info_help[16] ;
+  args_info->isnative_help = icee_args_info_help[17] ;
+  args_info->remotelist_help = icee_args_info_help[18] ;
+  args_info->attrlist_help = icee_args_info_help[19] ;
   
 }
 
@@ -245,6 +250,7 @@ icee_cmdline_parser_release (struct icee_args_info *args_info)
   free_string_field (&(args_info->readmethod_orig));
   free_string_field (&(args_info->len_orig));
   free_string_field (&(args_info->timeout_orig));
+  free_string_field (&(args_info->sleep_orig));
   free_string_field (&(args_info->host_arg));
   free_string_field (&(args_info->host_orig));
   free_string_field (&(args_info->port_orig));
@@ -305,6 +311,8 @@ icee_cmdline_parser_dump(FILE *outfile, struct icee_args_info *args_info)
     write_into_file(outfile, "len", args_info->len_orig, 0);
   if (args_info->timeout_given)
     write_into_file(outfile, "timeout", args_info->timeout_orig, 0);
+  if (args_info->sleep_given)
+    write_into_file(outfile, "sleep", args_info->sleep_orig, 0);
   if (args_info->host_given)
     write_into_file(outfile, "host", args_info->host_orig, 0);
   if (args_info->port_given)
@@ -594,6 +602,7 @@ icee_cmdline_parser_internal (
         { "readmethod",	1, NULL, 'r' },
         { "len",	1, NULL, 'n' },
         { "timeout",	1, NULL, 0 },
+        { "sleep",	1, NULL, 0 },
         { "host",	1, NULL, 0 },
         { "port",	1, NULL, 'p' },
         { "remotehost",	1, NULL, 's' },
@@ -767,6 +776,20 @@ icee_cmdline_parser_internal (
                 &(local_args_info.timeout_given), optarg, 0, "10.0", ARG_FLOAT,
                 check_ambiguity, override, 0, 0,
                 "timeout", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* interval time.  */
+          else if (strcmp (long_options[option_index].name, "sleep") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->sleep_arg), 
+                 &(args_info->sleep_orig), &(args_info->sleep_given),
+                &(local_args_info.sleep_given), optarg, 0, "5", ARG_INT,
+                check_ambiguity, override, 0, 0,
+                "sleep", '-',
                 additional_error))
               goto failure;
           
