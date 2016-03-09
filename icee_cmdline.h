@@ -56,6 +56,9 @@ struct icee_args_info
   int sleep_arg;	/**< @brief interval time (default='5').  */
   char * sleep_orig;	/**< @brief interval time original value given at command line.  */
   const char *sleep_help; /**< @brief interval time help description.  */
+  int nsteps_arg;	/**< @brief number of time steps (default='10').  */
+  char * nsteps_orig;	/**< @brief number of time steps original value given at command line.  */
+  const char *nsteps_help; /**< @brief number of time steps help description.  */
   char * host_arg;	/**< @brief local hostname (default='localhost').  */
   char * host_orig;	/**< @brief local hostname original value given at command line.  */
   const char *host_help; /**< @brief local hostname help description.  */
@@ -99,6 +102,7 @@ struct icee_args_info
   unsigned int len_given ;	/**< @brief Whether len was given.  */
   unsigned int timeout_given ;	/**< @brief Whether timeout was given.  */
   unsigned int sleep_given ;	/**< @brief Whether sleep was given.  */
+  unsigned int nsteps_given ;	/**< @brief Whether nsteps was given.  */
   unsigned int host_given ;	/**< @brief Whether host was given.  */
   unsigned int port_given ;	/**< @brief Whether port was given.  */
   unsigned int remotehost_given ;	/**< @brief Whether remotehost was given.  */

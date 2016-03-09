@@ -64,10 +64,11 @@ int main (int argc, char ** argv)
 
     string adios_write_method = "POSIX1";
     enum ADIOS_READ_METHOD adios_read_method = ADIOS_READ_METHOD_BP;
-    float  timeout_sec;
 
-    int    NX;
-    int    interval_sec = 5;
+    int   NX = args_info.len_arg;
+    float timeout_sec = args_info.timeout_arg;
+    int   interval_sec = args_info.sleep_arg;
+    int   nsteps = args_info.nsteps_arg;
 
     if (args_info.writemethod_given)
         adios_write_method = string(args_info.writemethod_arg);
@@ -83,9 +84,6 @@ int main (int argc, char ** argv)
         }
     }
 
-    NX = args_info.len_arg;
-    timeout_sec = args_info.timeout_arg;
-    interval_sec = args_info.sleep_arg;
 
     int         rank, size;
     MPI_Comm    comm = MPI_COMM_WORLD;
@@ -142,7 +140,8 @@ int main (int argc, char ** argv)
     {
         int         G, O;
         double      *t = (double *) malloc(NX * sizeof(double));
-        uint64_t    adios_groupsize, adios_totalsize;
+        assert(t != NULL);
+        uint64_t    adios_groupsize;
 
         adios_init_noxml (comm);
         //adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 1000);
@@ -170,23 +169,22 @@ int main (int argc, char ** argv)
                           ,"NX", "G", "O");
 
         G = NX * size;
-        if (rank==0) printf("NX = %d\n", NX);
+        if (rank==0) printf("NX = %'d\n", NX);
 
-        if (access(fname.c_str(), F_OK) != -1)
-            remove(fname.c_str());
-
-        for (int it =0; it < 10; it++)
+        for (int it =0; it < nsteps; it++)
         {
             for (int i = 0; i < NX; i++)
                 t[i] = rank + it + 1.0;
 
+            string amode = (!it)? "w" : "a";
+
             MPI_Barrier(comm);
             double t_start = MPI_Wtime();
 
-            adios_open (&m_adios_file, "restart", fname.c_str(), "a", comm);
+            adios_open (&m_adios_file, "restart", fname.c_str(), amode.c_str(), comm);
             adios_groupsize = 4 + 4 + 4 + NX * 8;
             //adios_group_size (m_adios_file, adios_groupsize, &adios_totalsize);
-            adios_set_max_buffer_size (adios_groupsize/1024/1024*2);
+            adios_set_max_buffer_size (adios_groupsize*size/1024L/1024L+1); // in MB
 
             adios_write(m_adios_file, "NX", (void *) &NX);
             adios_write(m_adios_file, "G", (void *) &G);
@@ -202,7 +200,7 @@ int main (int argc, char ** argv)
 
             if (rank==0)
                 printf("[%d] Wrote %'lld bytes, elapsed %.03f seconds, throughput %'.03f KB/sec\n",
-                       it, adios_groupsize, t_elap, (double)adios_groupsize/t_elap/1024.0);
+                       it, adios_groupsize*size, t_elap, (double)adios_groupsize*size/t_elap/1024.0);
 
             sleep_with_interval((double)interval_sec, 100);
              //sleep(interval_sec);
