@@ -65,7 +65,7 @@ int main (int argc, char ** argv)
     string adios_write_method = "POSIX1";
     enum ADIOS_READ_METHOD adios_read_method = ADIOS_READ_METHOD_BP;
 
-    int   NX = args_info.len_arg;
+    uint64_t NX = args_info.len_arg;
     float timeout_sec = args_info.timeout_arg;
     int   interval_sec = args_info.sleep_arg;
     int   nsteps = args_info.nsteps_arg;
@@ -79,6 +79,10 @@ int main (int argc, char ** argv)
             adios_read_method = ADIOS_READ_METHOD_BP;
         } else if (string(args_info.readmethod_arg) == "ICEE") {
             adios_read_method = ADIOS_READ_METHOD_ICEE;
+        } else if (string(args_info.readmethod_arg) == "DIMES") {
+            adios_read_method = ADIOS_READ_METHOD_DIMES;
+        } else if (string(args_info.readmethod_arg) == "DATASPACES") {
+            adios_read_method = ADIOS_READ_METHOD_DATASPACES;
         } else {
             fprintf(stderr, "No read method: %s\n", optarg);
         }
@@ -138,13 +142,13 @@ int main (int argc, char ** argv)
 
     if (mode == SERVER)
     {
-        int         G, O;
+        uint64_t    G, O;
         double      *t = (double *) malloc(NX * sizeof(double));
         assert(t != NULL);
-        uint64_t    adios_groupsize;
+        uint64_t    adios_groupsize, adios_totalsize;
 
         adios_init_noxml (comm);
-        //adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 1000);
+        adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 2048);
 
         int64_t       m_adios_group;
         int64_t       m_adios_file;
@@ -153,15 +157,15 @@ int main (int argc, char ** argv)
         adios_select_method (m_adios_group, adios_write_method.c_str(), initstr.c_str(), "");
 
         adios_define_var (m_adios_group, "NX"
-                          ,"", adios_integer
+                          ,"", adios_long
                           ,0, 0, 0);
 
         adios_define_var (m_adios_group, "G"
-                          ,"", adios_integer
+                          ,"", adios_long
                           ,0, 0, 0);
 
         adios_define_var (m_adios_group, "O"
-                          ,"", adios_integer
+                          ,"", adios_long
                           ,0, 0, 0);
 
         adios_define_var (m_adios_group, "temperature"
@@ -173,7 +177,7 @@ int main (int argc, char ** argv)
 
         for (int it =0; it < nsteps; it++)
         {
-            for (int i = 0; i < NX; i++)
+            for (uint64_t i = 0; i < NX; i++)
                 t[i] = rank + it + 1.0;
 
             string amode = (!it)? "w" : "a";
@@ -182,9 +186,9 @@ int main (int argc, char ** argv)
             double t_start = MPI_Wtime();
 
             adios_open (&m_adios_file, "restart", fname.c_str(), amode.c_str(), comm);
-            adios_groupsize = 4 + 4 + 4 + NX * 8;
-            //adios_group_size (m_adios_file, adios_groupsize, &adios_totalsize);
-            adios_set_max_buffer_size (adios_groupsize*size/1024L/1024L+1); // in MB
+            adios_groupsize = 8 + 8 + 8 + NX * 8;
+            adios_group_size (m_adios_file, adios_groupsize, &adios_totalsize);
+            //adios_set_max_buffer_size (adios_groupsize*size/1024L/1024L+1); // in MB
 
             adios_write(m_adios_file, "NX", (void *) &NX);
             adios_write(m_adios_file, "G", (void *) &G);
@@ -203,7 +207,6 @@ int main (int argc, char ** argv)
                        it, adios_groupsize*size, t_elap, (double)adios_groupsize*size/t_elap/1024.0);
 
             sleep_with_interval((double)interval_sec, 100);
-             //sleep(interval_sec);
         }
 
         adios_finalize (rank);
@@ -245,11 +248,15 @@ int main (int argc, char ** argv)
             v = adios_inq_var (f, "temperature");
 
             uint64_t slice_size = v->dims[0]/size;
-            if (rank == size-1)
-                slice_size = slice_size + v->dims[0]%size;
-
+            
             start[0] = rank * slice_size;
             count[0] = slice_size;
+
+            if (rank == size-1)
+            {
+                slice_size = v->dims[0] - rank * slice_size;
+                count[0] = slice_size;
+            }
 
             data = malloc (slice_size * sizeof(double));
             assert(data != NULL);
@@ -258,9 +265,16 @@ int main (int argc, char ** argv)
             while (adios_errno != err_end_of_stream) {
                 steps++; // steps start counting from 1
 
+                MPI_Barrier(comm);
+                double t_start = MPI_Wtime();
+                
                 sel = adios_selection_boundingbox (v->ndim, start, count);
                 adios_schedule_read (f, sel, "temperature", 0, 1, data);
                 adios_perform_reads (f, 1);
+                
+                MPI_Barrier(comm);
+                double t_end = MPI_Wtime();
+                double t_elap = t_end - t_start;
 
                 double sum = 0.0;
                 for (int i = 0; i < slice_size; i++)
@@ -268,8 +282,10 @@ int main (int argc, char ** argv)
                     sum += *((double *)data + i);
                 }
 
-                printf("Step:%d, rank=%d: sum(data[%lld:%lld]) = %.01f\n",
-                       f->current_step, rank, start[0], start[0]+count[0]-1, sum);
+                printf("Step:%d, rank=%d: elapsed %.03f seconds, sum(data[%lld:%lld]) = %.01f\n",
+                       f->current_step, rank, t_elap, start[0], start[0]+count[0]-1, sum);
+                
+                sleep_with_interval((double)interval_sec, 100);
 
                 // advance to 1) next available step with 2) blocking wait
                 adios_advance_step (f, 0, timeout_sec);
