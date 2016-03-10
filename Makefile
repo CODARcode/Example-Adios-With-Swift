@@ -1,3 +1,4 @@
+CC = mpicc
 CXX = mpicxx
 CPPFLAGS = -g
 
