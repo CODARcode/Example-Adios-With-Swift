@@ -107,7 +107,7 @@ int main (int argc, char ** argv)
         mode = CLIENT;
 
     string initstr = string(args_info.params_arg);
-    
+
     if (adios_write_method == "ICEE")
     {
         s << "verbose=" << args_info.verbose_arg << ";";
@@ -139,7 +139,7 @@ int main (int argc, char ** argv)
 
         if (args_info.attrlist_given)
             s << "attr_list=" << args_info.attrlist_arg << ";";
-    
+
         initstr = initstr + ";" + s.str();
     }
 
@@ -149,7 +149,7 @@ int main (int argc, char ** argv)
     if (mode == SERVER)
     {
         uint64_t    G, O;
-        double      *t = (double *) malloc(NX * sizeof(double));
+        char        *t = (char *) malloc(NX * sizeof(char));
         assert(t != NULL);
         uint64_t    adios_groupsize, adios_totalsize;
 
@@ -175,7 +175,7 @@ int main (int argc, char ** argv)
                           ,0, 0, 0);
 
         adios_define_var (m_adios_group, "temperature"
-                          ,"", adios_double
+                          ,"", adios_byte
                           ,"NX", "G", "O");
 
         G = NX * size;
@@ -188,8 +188,8 @@ int main (int argc, char ** argv)
             printf("%10s : %'d (seconds)\n", "Interval", interval_sec);
             printf("%10s : %'d\n", "MPI size", size);
             printf("%10s : %'llu\n", "Length", NX);
-            printf("%10s : %'.02f (MiB/proc)\n", "Data/PE", NX*8/1024.0/1024.0);
-            printf("%10s : %'.02f (MiB)\n", "Total", G*8/1024.0/1024.0);
+            printf("%10s : %'.02f (MiB/proc)\n", "Data/PE", NX/1024.0/1024.0);
+            printf("%10s : %'.02f (MiB)\n", "Total", G/1024.0/1024.0);
             printf("===================\n\n");
         }
 
@@ -204,7 +204,7 @@ int main (int argc, char ** argv)
             double t_start = MPI_Wtime();
 
             adios_open (&m_adios_file, "restart", fname.c_str(), amode.c_str(), comm);
-            adios_groupsize = 8 + 8 + 8 + NX * 8;
+            adios_groupsize = 8 + 8 + 8 + NX * 1;
             adios_group_size (m_adios_file, adios_groupsize, &adios_totalsize);
             //adios_set_max_buffer_size (adios_groupsize*size/1024L/1024L+1); // in MB
 
@@ -246,7 +246,7 @@ int main (int argc, char ** argv)
         ADIOS_VARINFO * v;
         ADIOS_SELECTION * sel;
 
-        void * data = NULL;
+        char *data = NULL;
         uint64_t start[2], count[2];
 
         adios_read_init_method (adios_read_method, comm, initstr.c_str());
@@ -291,7 +291,7 @@ int main (int argc, char ** argv)
                 printf("===================\n\n");
             }
 
-            data = malloc (slice_size * sizeof(double));
+            data = (char *) malloc (slice_size * sizeof(char));
             assert(data != NULL);
 
             /* Processing loop over the steps (we are already in the first one) */
@@ -317,7 +317,7 @@ int main (int argc, char ** argv)
                 double sum = 0.0;
                 for (uint64_t i = 0; i < slice_size; i++)
                 {
-                    sum += *((double *)data + i);
+                    sum += (double) data[i];
                 }
 
                 if (f->current_step==0 && rank==0)
@@ -359,7 +359,7 @@ int main (int argc, char ** argv)
 
         adios_read_finalize_method (adios_read_method);
     }
-    
+
     if (rank==0)
         printf ("Done.\n");
 

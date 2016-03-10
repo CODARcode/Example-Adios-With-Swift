@@ -48,9 +48,9 @@ struct icee_args_info
   char * readmethod_orig;	/**< @brief ADIOS read method original value given at command line.  */
   const char *readmethod_help; /**< @brief ADIOS read method help description.  */
   #ifdef HAVE_LONG_LONG
-  long long int len_arg;	/**< @brief array length (default=131072).  */
+  long long int len_arg;	/**< @brief array length (default=1048576).  */
   #else
-  long len_arg;	/**< @brief array length (default=131072).  */
+  long len_arg;	/**< @brief array length (default=1048576).  */
   #endif
   char * len_orig;	/**< @brief array length original value given at command line.  */
   const char *len_help; /**< @brief array length help description.  */
