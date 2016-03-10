@@ -100,7 +100,9 @@ int main (int argc, char ** argv)
     mode_t mode = SERVER;
 
     std::stringstream s;
-
+    time_t ltime;
+    char *timetext;
+    
     if (args_info.client_flag)
         mode = CLIENT;
 
@@ -173,7 +175,18 @@ int main (int argc, char ** argv)
                           ,"NX", "G", "O");
 
         G = NX * size;
-        if (rank==0) printf("NX = %'d\n", NX);
+        
+        if (rank==0)
+        {
+            printf("===== SUMMARY =====\n");
+            printf("%10s : %'d\n", "Method", adios_write_method.c_str());
+            printf("%10s : %'d\n", "Interval", interval_sec);
+            printf("%10s : %'d\n", "MPI size", size);
+            printf("%10s : %'d\n", "NX", NX);
+            printf("%10s : %'.02f (MiB/proc)\n", "Data/PE", NX*8/1024.0/1024.0);
+            printf("%10s : %'.02f (MiB)\n", "Total", G*8/1024.0/1024.0);
+            printf("===================\n\n");
+        }
 
         for (int it =0; it < nsteps; it++)
         {
@@ -182,7 +195,7 @@ int main (int argc, char ** argv)
 
             string amode = (!it)? "w" : "a";
 
-            MPI_Barrier(comm);
+            //MPI_Barrier(comm);
             double t_start = MPI_Wtime();
 
             adios_open (&m_adios_file, "restart", fname.c_str(), amode.c_str(), comm);
@@ -198,15 +211,23 @@ int main (int argc, char ** argv)
 
             adios_close (m_adios_file);
 
-            MPI_Barrier(comm);
+            //MPI_Barrier(comm);
             double t_end = MPI_Wtime();
             double t_elap = t_end - t_start;
 
-            if (rank==0)
-                printf("[%d] Wrote %'lld bytes, elapsed %.03f seconds, throughput %'.03f KB/sec\n",
-                       it, adios_groupsize*size, t_elap, (double)adios_groupsize*size/t_elap/1024.0);
+            ltime=time(NULL);
+            timetext = asctime(localtime(&ltime));
+            timetext[24] = '\0';
 
+            if (it==0 && rank==0)
+                printf("    %26s %5s %5s %9s %10s\n", "timestep", "seq", "rank", "elap(sec)", "throughput (MiB/sec)");
+            MPI_Barrier(comm);
             sleep_with_interval((double)interval_sec, 100);
+            
+            printf(">>> (%s) %5d %5d %9.03f %'12.03f %'12.03f\n",
+                   timetext, it, rank, t_elap,
+                   (double)adios_groupsize/t_elap/1024.0/1024.0,
+                   (double)adios_groupsize*size/t_elap/1024.0/1024.0);
         }
 
         adios_finalize (rank);
@@ -258,6 +279,16 @@ int main (int argc, char ** argv)
                 count[0] = slice_size;
             }
 
+            if (rank==0)
+            {
+                printf("===== SUMMARY =====\n");
+                printf("%10s : %s\n", "Method", args_info.readmethod_arg);
+                printf("%10s : %'d\n", "Interval", interval_sec);
+                printf("%10s : %'d\n", "MPI size", size);
+                printf("%10s : %'d\n", "Global dim", v->dims[0]);
+                printf("===================\n\n");
+            }
+
             data = malloc (slice_size * sizeof(double));
             assert(data != NULL);
 
@@ -265,27 +296,37 @@ int main (int argc, char ** argv)
             while (adios_errno != err_end_of_stream) {
                 steps++; // steps start counting from 1
 
-                MPI_Barrier(comm);
+                //MPI_Barrier(comm);
                 double t_start = MPI_Wtime();
                 
                 sel = adios_selection_boundingbox (v->ndim, start, count);
                 adios_schedule_read (f, sel, "temperature", 0, 1, data);
                 adios_perform_reads (f, 1);
                 
-                MPI_Barrier(comm);
+                //MPI_Barrier(comm);
                 double t_end = MPI_Wtime();
                 double t_elap = t_end - t_start;
 
+                ltime=time(NULL);
+                timetext = asctime(localtime(&ltime));
+                timetext[24] = '\0';
+            
                 double sum = 0.0;
                 for (int i = 0; i < slice_size; i++)
                 {
                     sum += *((double *)data + i);
                 }
 
-                printf("Step:%d, rank=%d: elapsed %.03f seconds, sum(data[%lld:%lld]) = %.01f\n",
-                       f->current_step, rank, t_elap, start[0], start[0]+count[0]-1, sum);
-                
+                if (f->current_step==0 && rank==0)
+                    printf("    %26s %5s %5s %9s %10s\n", "timestep", "seq", "rank", "elap(sec)", "throughput (MiB/sec)");
+                MPI_Barrier(comm);
                 sleep_with_interval((double)interval_sec, 100);
+
+                printf(">>> (%s) %5d %5d %9.03f %'12.03f %'12.03f %'.01f\n",
+                       timetext, f->current_step, rank, t_elap,
+                       (double)(count[0])*8/t_elap/1024.0/1024.0,
+                       (double)(v->dims[0])*8/t_elap/1024.0/1024.0,
+                       sum);                
 
                 // advance to 1) next available step with 2) blocking wait
                 adios_advance_step (f, 0, timeout_sec);
