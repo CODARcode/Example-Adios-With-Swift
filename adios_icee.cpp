@@ -106,38 +106,42 @@ int main (int argc, char ** argv)
     if (args_info.client_flag)
         mode = CLIENT;
 
-    s << "verbose=" << args_info.verbose_arg << ";";
+    string initstr = string(args_info.params_arg);
+    
+    if (adios_write_method == "ICEE")
+    {
+        s << "verbose=" << args_info.verbose_arg << ";";
 
-    if (args_info.host_given)
-        s << "cm_host=" << args_info.host_arg << ";";
+        if (args_info.host_given)
+            s << "cm_host=" << args_info.host_arg << ";";
 
-    s << "cm_port=" << args_info.port_arg + rank << ";";
+        s << "cm_port=" << args_info.port_arg + rank << ";";
 
-    if (args_info.remotehost_given)
-        s << "cm_remote_host=" << args_info.remotehost_arg << ";";
+        if (args_info.remotehost_given)
+            s << "cm_remote_host=" << args_info.remotehost_arg << ";";
 
-    s << "cm_remote_port=" << args_info.remoteport_arg + rank << ";";
+        s << "cm_remote_port=" << args_info.remoteport_arg + rank << ";";
 
-    if (args_info.method_given)
-        s << "transport=" << args_info.method_arg << ";";
+        if (args_info.method_given)
+            s << "transport=" << args_info.method_arg << ";";
 
-    if (args_info.passive_given)
-        s << "is_passive=" << args_info.passive_flag << ";";
+        if (args_info.passive_given)
+            s << "is_passive=" << args_info.passive_flag << ";";
 
-    if (args_info.isnative_given)
-        s << "use_native_contact=" << args_info.isnative_flag << ";";
+        if (args_info.isnative_given)
+            s << "use_native_contact=" << args_info.isnative_flag << ";";
 
-    if (args_info.nclient_given)
-        s << "max_client=" << args_info.nclient_arg << ";";
+        if (args_info.nclient_given)
+            s << "max_client=" << args_info.nclient_arg << ";";
 
-    if (args_info.remotelist_given)
-        s << "remote_list=" << args_info.remotelist_arg << ";";
+        if (args_info.remotelist_given)
+            s << "remote_list=" << args_info.remotelist_arg << ";";
 
-    if (args_info.attrlist_given)
-        s << "attr_list=" << args_info.attrlist_arg << ";";
-
-    string initstr = s.str();
-
+        if (args_info.attrlist_given)
+            s << "attr_list=" << args_info.attrlist_arg << ";";
+    
+        initstr = initstr + ";" + s.str();
+    }
 
     setlocale(LC_NUMERIC, "en_US.UTF-8");
     string fname = "icee.bp";
@@ -180,6 +184,7 @@ int main (int argc, char ** argv)
         {
             printf("===== SUMMARY =====\n");
             printf("%10s : %s\n", "Method", adios_write_method.c_str());
+            printf("%10s : %s\n", "Params", initstr.c_str());
             printf("%10s : %'d (seconds)\n", "Interval", interval_sec);
             printf("%10s : %'d\n", "MPI size", size);
             printf("%10s : %'llu\n", "Length", NX);
@@ -241,9 +246,6 @@ int main (int argc, char ** argv)
         ADIOS_VARINFO * v;
         ADIOS_SELECTION * sel;
 
-        int steps = 0;
-        int retval = 0;
-
         void * data = NULL;
         uint64_t start[2], count[2];
 
@@ -255,16 +257,13 @@ int main (int argc, char ** argv)
         {
             printf ("rank %d: Stream not found after waiting %f seconds: %s\n",
                     rank, timeout_sec, adios_errmsg());
-            retval = adios_errno;
         }
         else if (adios_errno == err_end_of_stream)
         {
             printf ("rank %d: Stream terminated before open. %s\n", rank, adios_errmsg());
-            retval = adios_errno;
         }
         else if (f == NULL) {
             printf ("rank %d: Error at opening stream: %s\n", rank, adios_errmsg());
-            retval = adios_errno;
         }
         else
         {
@@ -355,15 +354,14 @@ int main (int argc, char ** argv)
             }
 
             adios_read_close (f);
+            free (data);
         }
 
-        if (rank==0)
-            printf ("Done\n");
-
         adios_read_finalize_method (adios_read_method);
-        free (data);
     }
-
+    
+    if (rank==0)
+        printf ("Done.\n");
 
     MPI_Finalize ();
     return 0;
