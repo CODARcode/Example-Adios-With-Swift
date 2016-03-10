@@ -41,6 +41,7 @@ const char *icee_args_info_help[] = {
   "      --timeout=FLOAT       Timeout  (default=`10.0')",
   "      --sleep=INT           interval time  (default=`5')",
   "      --nsteps=INT          number of time steps  (default=`10')",
+  "      --params=STRING       ADIOS write method params  (default=`')",
   "      --host=STRING         local hostname  (default=`localhost')",
   "  -p, --port=INT            local port  (default=`59900')",
   "  -s, --remotehost=STRING   remote hostname  (default=`localhost')",
@@ -89,6 +90,7 @@ void clear_given (struct icee_args_info *args_info)
   args_info->timeout_given = 0 ;
   args_info->sleep_given = 0 ;
   args_info->nsteps_given = 0 ;
+  args_info->params_given = 0 ;
   args_info->host_given = 0 ;
   args_info->port_given = 0 ;
   args_info->remotehost_given = 0 ;
@@ -120,6 +122,8 @@ void clear_args (struct icee_args_info *args_info)
   args_info->sleep_orig = NULL;
   args_info->nsteps_arg = 10;
   args_info->nsteps_orig = NULL;
+  args_info->params_arg = gengetopt_strdup ("");
+  args_info->params_orig = NULL;
   args_info->host_arg = gengetopt_strdup ("localhost");
   args_info->host_orig = NULL;
   args_info->port_arg = 59900;
@@ -158,18 +162,19 @@ void init_args_info(struct icee_args_info *args_info)
   args_info->timeout_help = icee_args_info_help[6] ;
   args_info->sleep_help = icee_args_info_help[7] ;
   args_info->nsteps_help = icee_args_info_help[8] ;
-  args_info->host_help = icee_args_info_help[9] ;
-  args_info->port_help = icee_args_info_help[10] ;
-  args_info->remotehost_help = icee_args_info_help[11] ;
-  args_info->remoteport_help = icee_args_info_help[12] ;
-  args_info->method_help = icee_args_info_help[13] ;
-  args_info->verbose_help = icee_args_info_help[14] ;
-  args_info->contact_help = icee_args_info_help[15] ;
-  args_info->passive_help = icee_args_info_help[16] ;
-  args_info->nclient_help = icee_args_info_help[17] ;
-  args_info->isnative_help = icee_args_info_help[18] ;
-  args_info->remotelist_help = icee_args_info_help[19] ;
-  args_info->attrlist_help = icee_args_info_help[20] ;
+  args_info->params_help = icee_args_info_help[9] ;
+  args_info->host_help = icee_args_info_help[10] ;
+  args_info->port_help = icee_args_info_help[11] ;
+  args_info->remotehost_help = icee_args_info_help[12] ;
+  args_info->remoteport_help = icee_args_info_help[13] ;
+  args_info->method_help = icee_args_info_help[14] ;
+  args_info->verbose_help = icee_args_info_help[15] ;
+  args_info->contact_help = icee_args_info_help[16] ;
+  args_info->passive_help = icee_args_info_help[17] ;
+  args_info->nclient_help = icee_args_info_help[18] ;
+  args_info->isnative_help = icee_args_info_help[19] ;
+  args_info->remotelist_help = icee_args_info_help[20] ;
+  args_info->attrlist_help = icee_args_info_help[21] ;
   
 }
 
@@ -258,6 +263,8 @@ icee_cmdline_parser_release (struct icee_args_info *args_info)
   free_string_field (&(args_info->timeout_orig));
   free_string_field (&(args_info->sleep_orig));
   free_string_field (&(args_info->nsteps_orig));
+  free_string_field (&(args_info->params_arg));
+  free_string_field (&(args_info->params_orig));
   free_string_field (&(args_info->host_arg));
   free_string_field (&(args_info->host_orig));
   free_string_field (&(args_info->port_orig));
@@ -322,6 +329,8 @@ icee_cmdline_parser_dump(FILE *outfile, struct icee_args_info *args_info)
     write_into_file(outfile, "sleep", args_info->sleep_orig, 0);
   if (args_info->nsteps_given)
     write_into_file(outfile, "nsteps", args_info->nsteps_orig, 0);
+  if (args_info->params_given)
+    write_into_file(outfile, "params", args_info->params_orig, 0);
   if (args_info->host_given)
     write_into_file(outfile, "host", args_info->host_orig, 0);
   if (args_info->port_given)
@@ -621,6 +630,7 @@ icee_cmdline_parser_internal (
         { "timeout",	1, NULL, 0 },
         { "sleep",	1, NULL, 0 },
         { "nsteps",	1, NULL, 0 },
+        { "params",	1, NULL, 0 },
         { "host",	1, NULL, 0 },
         { "port",	1, NULL, 'p' },
         { "remotehost",	1, NULL, 's' },
@@ -822,6 +832,20 @@ icee_cmdline_parser_internal (
                 &(local_args_info.nsteps_given), optarg, 0, "10", ARG_INT,
                 check_ambiguity, override, 0, 0,
                 "nsteps", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* ADIOS write method params.  */
+          else if (strcmp (long_options[option_index].name, "params") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->params_arg), 
+                 &(args_info->params_orig), &(args_info->params_given),
+                &(local_args_info.params_given), optarg, 0, "", ARG_STRING,
+                check_ambiguity, override, 0, 0,
+                "params", '-',
                 additional_error))
               goto failure;
           
