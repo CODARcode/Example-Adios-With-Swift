@@ -47,7 +47,11 @@ struct icee_args_info
   char * readmethod_arg;	/**< @brief ADIOS read method (default='BP').  */
   char * readmethod_orig;	/**< @brief ADIOS read method original value given at command line.  */
   const char *readmethod_help; /**< @brief ADIOS read method help description.  */
-  int len_arg;	/**< @brief array length (default='1000').  */
+  #ifdef HAVE_LONG_LONG
+  long long int len_arg;	/**< @brief array length (default=1000).  */
+  #else
+  long len_arg;	/**< @brief array length (default=1000).  */
+  #endif
   char * len_orig;	/**< @brief array length original value given at command line.  */
   const char *len_help; /**< @brief array length help description.  */
   float timeout_arg;	/**< @brief Timeout (default='10.0').  */

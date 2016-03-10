@@ -37,7 +37,7 @@ const char *icee_args_info_help[] = {
   "  -c, --client              Client mode  (default=off)",
   "  -w, --writemethod=STRING  ADIOS write method  (default=`POSIX1')",
   "  -r, --readmethod=STRING   ADIOS read method  (default=`BP')",
-  "  -n, --len=INT             array length  (default=`1000')",
+  "  -n, --len=LONGLONG        array length  (default=`1000')",
   "      --timeout=FLOAT       Timeout  (default=`10.0')",
   "      --sleep=INT           interval time  (default=`5')",
   "      --nsteps=INT          number of time steps  (default=`10')",
@@ -61,6 +61,7 @@ typedef enum {ARG_NO
   , ARG_STRING
   , ARG_INT
   , ARG_FLOAT
+  , ARG_LONGLONG
 } icee_cmdline_parser_arg_type;
 
 static
@@ -520,6 +521,13 @@ int update_arg(void *field, char **orig_field,
   case ARG_FLOAT:
     if (val) *((float *)field) = (float)strtod (val, &stop_char);
     break;
+  case ARG_LONGLONG:
+#ifdef HAVE_LONG_LONG
+    if (val) *((long long int*)field) = (long long int) strtol (val, &stop_char, 0);
+#else
+    if (val) *((long *)field) = (long)strtol (val, &stop_char, 0);
+#endif
+    break;
   case ARG_STRING:
     if (val) {
       string_field = (char **)field;
@@ -536,6 +544,7 @@ int update_arg(void *field, char **orig_field,
   switch(arg_type) {
   case ARG_INT:
   case ARG_FLOAT:
+  case ARG_LONGLONG:
     if (val && !(stop_char && *stop_char == '\0')) {
       fprintf(stderr, "%s: invalid numeric value: %s\n", package_name, val);
       return 1; /* failure */
@@ -682,7 +691,7 @@ icee_cmdline_parser_internal (
         
           if (update_arg( (void *)&(args_info->len_arg), 
                &(args_info->len_orig), &(args_info->len_given),
-              &(local_args_info.len_given), optarg, 0, "1000", ARG_INT,
+              &(local_args_info.len_given), optarg, 0, "1000", ARG_LONGLONG,
               check_ambiguity, override, 0, 0,
               "len", 'n',
               additional_error))
