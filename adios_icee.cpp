@@ -357,11 +357,11 @@ int main (int argc, char ** argv)
             free (data);
         }
 
-        if (rank==0)
-            printf ("Done\n");
-
         adios_read_finalize_method (adios_read_method);
     }
+    
+    if (rank==0)
+        printf ("Done.\n");
 
     MPI_Finalize ();
     return 0;
