@@ -56,4 +56,5 @@ idx = args.tstep
 st = stamp[:,idx] - elap[:,idx]
 ed = stamp[:,idx]
 plt.errorbar(range(elap.shape[0]), ed, yerr=[elap[:,idx], (0,)*elap.shape[0]], fmt='none', elinewidth=2)
+plt.title('Index=%r' % idx)
 plt.show()
