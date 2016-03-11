@@ -5,9 +5,8 @@ import sys
 import matplotlib.pyplot as plt
 
 parser = argparse.ArgumentParser()
-parser.add_argument('logfile', help='logfile')
-parser.add_argument('stagelog', nargs='?', help='stagelog')
-parser.add_argument('--filter', help='filter (e.g., "::5", ":10"')
+parser.add_argument('logfile', nargs='+', help='logfile')
+parser.add_argument('--filter', help='filter (e.g., ":,:", ":,2:")')
 parser.add_argument('--tstep', help='timestep', type=int, default=0)
 args = parser.parse_args()
 
@@ -34,24 +33,22 @@ def get_timinglines(fname):
 
     return elap, stamp
 
-elap1, stamp1 = get_timinglines(args.logfile)
+elap, stamp = get_timinglines(args.logfile[0])
+for logfile in args.logfile[1:]:
+    elap_, stamp_ = get_timinglines(logfile)
+    elap = np.concatenate((elap, elap_), 0)
+    stamp = np.concatenate((stamp, stamp_), 0)
 
-elap2 = np.zeros((0, elap1.shape[1]), dtype=elap1.dtype)
-stamp2 = np.zeros((0, stamp1.shape[1]), dtype=stamp1.dtype)
-if args.stagelog is not None:
-    elap2, stamp2 = get_timinglines(args.stagelog)
-
-elap = np.vstack((elap1,elap2))
-stamp = np.vstack((stamp1,stamp2))
 if args.filter is not None:
     elap = eval('elap[%s]' % args.filter)
     stamp = eval('stamp[%s]' % args.filter)
 
-plt.subplot(2, 1, 1)
+#plt.subplot(2, 1, 1)
 p = plt.plot(elap)
 plt.legend(p, range(elap.shape[1]), loc='best', fontsize='small')
 
-plt.subplot(2, 1, 2)
+#plt.subplot(2, 1, 2)
+plt.figure(0)
 idx = args.tstep
 st = stamp[:,idx] - elap[:,idx]
 ed = stamp[:,idx]
