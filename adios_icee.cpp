@@ -186,10 +186,11 @@ int main (int argc, char ** argv)
             printf("%10s : %s\n", "Method", adios_write_method.c_str());
             printf("%10s : %s\n", "Params", initstr.c_str());
             printf("%10s : %'d (seconds)\n", "Interval", interval_sec);
-            printf("%10s : %'d\n", "MPI size", size);
+            printf("%10s : %'d\n", "PEs", size);
             printf("%10s : %'llu\n", "Length", NX);
             printf("%10s : %'.02f (MiB/proc)\n", "Data/PE", NX/1024.0/1024.0);
             printf("%10s : %'.02f (MiB)\n", "Total", G/1024.0/1024.0);
+            printf("%10s : %'d\n", "Steps", nsteps);
             printf("===================\n\n");
         }
 
@@ -220,20 +221,20 @@ int main (int argc, char ** argv)
             double t_end = MPI_Wtime();
             double t_elap = t_end - t_start;
 
-            ltime=time(NULL);
-            timetext = asctime(localtime(&ltime));
-            timetext[24] = '\0';
+            //ltime=time(NULL);
+            //timetext = asctime(localtime(&ltime));
+            //timetext[24] = '\0';
 
             if (it==0 && rank==0)
             {
-                printf("    %26s %5s %5s %9s %12s %12s\n", "timestep", "seq", "rank", "elap(sec)", "local(MiB/s)", "global(MiB/s)");
-                printf("    %26s %5s %5s %9s %12s %12s\n", "--------", "---", "----", "---------", "------------", "-------------");
+                printf("    %14s %5s %5s %9s %12s %12s\n", "timestep", "seq", "rank", "elap(sec)", "local(MiB/s)", "global(MiB/s)");
+                printf("    %14s %5s %5s %9s %12s %12s\n", "--------", "---", "----", "---------", "------------", "-------------");
             }
             MPI_Barrier(comm);
             sleep_with_interval((double)interval_sec, 100);
 
-            printf(">>> (%s) %5d %5d %9.03f %'12.03f %'12.03f\n",
-                   timetext, it, rank, t_elap,
+            printf(">>> %14.03f %5d %5d %9.03f %'12.03f %'12.03f\n",
+                   t_end, it, rank, t_elap,
                    (double)adios_groupsize/t_elap/1024.0/1024.0,
                    (double)adios_groupsize*size/t_elap/1024.0/1024.0);
         }
@@ -286,8 +287,9 @@ int main (int argc, char ** argv)
                 printf("===== SUMMARY =====\n");
                 printf("%10s : %s\n", "Method", args_info.readmethod_arg);
                 printf("%10s : %'d (seconds)\n", "Interval", interval_sec);
-                printf("%10s : %'d\n", "MPI size", size);
-                printf("%10s : %'llu\n", "Global dim", v->dims[0]);
+                printf("%10s : %'d\n", "PEs", size);
+                printf("%10s : %'llu\n", "Length", v->dims[0]);
+                printf("%10s : %'d\n", "Steps", nsteps);
                 printf("===================\n\n");
             }
 
@@ -310,9 +312,9 @@ int main (int argc, char ** argv)
                 double t_end = MPI_Wtime();
                 double t_elap = t_end - t_start;
 
-                ltime=time(NULL);
-                timetext = asctime(localtime(&ltime));
-                timetext[24] = '\0';
+                //ltime=time(NULL);
+                //timetext = asctime(localtime(&ltime));
+                //timetext[24] = '\0';
 
                 double sum = 0.0;
                 for (uint64_t i = 0; i < slice_size; i++)
@@ -322,14 +324,14 @@ int main (int argc, char ** argv)
 
                 if (f->current_step==0 && rank==0)
                 {
-                    printf("    %26s %5s %5s %9s %12s %12s\n", "timestep", "seq", "rank", "elap(sec)", "local(MiB/s)", "global(MiB/s)");
-                    printf("    %26s %5s %5s %9s %12s %12s\n", "--------", "---", "----", "---------", "------------", "-------------");
+                    printf("    %14s %5s %5s %9s %12s %12s %s\n", "timestep", "seq", "rank", "elap(sec)", "local(MiB/s)", "global(MiB/s)", "check");
+                    printf("    %14s %5s %5s %9s %12s %12s %s\n", "--------", "---", "----", "---------", "------------", "-------------", "-----");
                 }
                 MPI_Barrier(comm);
                 sleep_with_interval((double)interval_sec, 100);
 
-                printf(">>> (%s) %5d %5d %9.03f %'12.03f %'12.03f  %'.01f\n",
-                       timetext, f->current_step, rank, t_elap,
+                printf(">>> %14.03f %5d %5d %9.03f %'12.03f %'12.03f  %'.01f\n",
+                       t_end, f->current_step, rank, t_elap,
                        (double)(count[0])*8/t_elap/1024.0/1024.0,
                        (double)(v->dims[0])*8/t_elap/1024.0/1024.0,
                        sum);
