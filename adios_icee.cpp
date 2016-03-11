@@ -107,6 +107,7 @@ int main (int argc, char ** argv)
         mode = CLIENT;
 
     string initstr = string(args_info.params_arg);
+    string prefix = string(args_info.prefix_arg);
 
     if (adios_write_method == "ICEE")
     {
@@ -145,6 +146,8 @@ int main (int argc, char ** argv)
 
     setlocale(LC_NUMERIC, "en_US.UTF-8");
     string fname = "icee.bp";
+    if (prefix.length() > 0)
+        fname = prefix + "/" + fname;
 
     if (mode == SERVER)
     {
