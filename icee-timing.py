@@ -40,6 +40,24 @@ def get_timinglines(fname):
 
     return elap, stamp
 
+def print_summary(fname):
+    print 'Logfilename:', fname
+    with open(fname) as f:
+        lines = f.readlines()
+        verbose = False
+        for line in lines:
+            if line.startswith('====='):
+                verbose = not verbose
+                if not verbose:
+                    print line
+                    break
+
+            if (verbose):
+                print line.rstrip()
+
+for logfile in args.logfile:
+    print_summary(logfile)
+
 elap, stamp = get_timinglines(args.logfile[0])
 for logfile in args.logfile[1:]:
     elap_, stamp_ = get_timinglines(logfile)
@@ -49,7 +67,6 @@ for logfile in args.logfile[1:]:
 if args.filter is not None:
     elap = eval('elap[%s]' % args.filter)
     stamp = eval('stamp[%s]' % args.filter)
-
 
 if args.summary:
     nsteps = elap.shape[0]
@@ -61,8 +78,8 @@ if args.summary:
             '%9.3f' % np.std(elap[t,:]), \
             '%9.3f' % np.min(elap[t,:]), \
             '%9.3f' % np.max(elap[t,:])
-        
-    print '%9s' % '---' 
+
+    print '%9s' % '---'
     print '%9s' % 'AVG', \
         '%9.3f' % np.mean(elap[:,0]), \
         '%9.3f' % np.mean(elap[:,:])
@@ -72,14 +89,14 @@ if args.summary:
 
 if args.display:
     import matplotlib.pyplot as plt
-    
+
     plt.figure(1)
     p = plt.plot(elap)
     if ymin is not None:
         plt.ylim((ymin ,plt.ylim()[1]))
         plt.legend(p, range(elap.shape[1]), loc='best', fontsize='small')
         plt.xlabel('Timestep')
-        
+
     plt.figure(2)
     p = plt.plot(elap.T)
     if ymin is not None:
