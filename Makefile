@@ -1,6 +1,6 @@
 CC = mpicc
 CXX = mpicxx
-CPPFLAGS = -g
+CFLAGS = -g
 
 ADIOS_INC = $(shell adios_config -c)
 ADIOS_LIB = $(shell adios_config -l)
@@ -16,16 +16,16 @@ all: adios_icee
 	$(CC) $(CFLAGS) $(INCS) -c $<
 
 .cpp.o:
-	$(CXX) $(CXXFLAGS) $(INCS) -c $<
+	$(CXX) $(CFLAGS) $(INCS) -c $<
 
 adios_write: adios_write.cpp
-	$(CXX) $(CPPFLAGS) $(ADIOS_INC) -o $@ $^ $(ADIOS_LIB)
+	$(CXX) $(CFLAGS) $(ADIOS_INC) -o $@ $^ $(ADIOS_LIB)
 
 adios_read: adios_read.cpp icee_cmdline.c
-	$(CXX) $(CPPFLAGS) $(ADIOS_INC) -o $@ $^ $(ADIOS_LIB)
+	$(CXX) $(CFLAGS) $(ADIOS_INC) -o $@ $^ $(ADIOS_LIB)
 
 adios_icee: adios_icee.o icee_cmdline.o
-	$(CXX) $(CPPFLAGS) $(ADIOS_INC) -o $@ $^ $(ADIOS_LIB)
+	$(CXX) $(CFLAGS) $(ADIOS_INC) -o $@ $^ $(ADIOS_LIB)
 
 ggo: 
 	gengetopt --input=icee_cmdline.ggo
