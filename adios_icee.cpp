@@ -202,7 +202,7 @@ int main (int argc, char ** argv)
             for (uint64_t i = 0; i < NX; i++)
                 t[i] = rank + it + 1.0;
 
-            string amode = (!it)? "w" : "a";
+            string amode = (!it)? "w" : "w";
 
             //MPI_Barrier(comm);
             double t_start = MPI_Wtime();
