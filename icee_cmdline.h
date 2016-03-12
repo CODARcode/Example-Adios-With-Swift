@@ -69,6 +69,8 @@ struct icee_args_info
   char * prefix_arg;	/**< @brief prefix (default='').  */
   char * prefix_orig;	/**< @brief prefix original value given at command line.  */
   const char *prefix_help; /**< @brief prefix help description.  */
+  int append_flag;	/**< @brief append (default=off).  */
+  const char *append_help; /**< @brief append help description.  */
   char * host_arg;	/**< @brief local hostname (default='localhost').  */
   char * host_orig;	/**< @brief local hostname original value given at command line.  */
   const char *host_help; /**< @brief local hostname help description.  */
@@ -115,6 +117,7 @@ struct icee_args_info
   unsigned int nsteps_given ;	/**< @brief Whether nsteps was given.  */
   unsigned int params_given ;	/**< @brief Whether params was given.  */
   unsigned int prefix_given ;	/**< @brief Whether prefix was given.  */
+  unsigned int append_given ;	/**< @brief Whether append was given.  */
   unsigned int host_given ;	/**< @brief Whether host was given.  */
   unsigned int port_given ;	/**< @brief Whether port was given.  */
   unsigned int remotehost_given ;	/**< @brief Whether remotehost was given.  */

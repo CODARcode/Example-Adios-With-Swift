@@ -43,6 +43,7 @@ const char *icee_args_info_help[] = {
   "      --nsteps=INT          number of time steps  (default=`10')",
   "      --params=STRING       ADIOS write method params  (default=`')",
   "      --prefix=STRING       prefix  (default=`')",
+  "      --append              append  (default=off)",
   "      --host=STRING         local hostname  (default=`localhost')",
   "  -p, --port=INT            local port  (default=`59900')",
   "  -s, --remotehost=STRING   remote hostname  (default=`localhost')",
@@ -93,6 +94,7 @@ void clear_given (struct icee_args_info *args_info)
   args_info->nsteps_given = 0 ;
   args_info->params_given = 0 ;
   args_info->prefix_given = 0 ;
+  args_info->append_given = 0 ;
   args_info->host_given = 0 ;
   args_info->port_given = 0 ;
   args_info->remotehost_given = 0 ;
@@ -128,6 +130,7 @@ void clear_args (struct icee_args_info *args_info)
   args_info->params_orig = NULL;
   args_info->prefix_arg = gengetopt_strdup ("");
   args_info->prefix_orig = NULL;
+  args_info->append_flag = 0;
   args_info->host_arg = gengetopt_strdup ("localhost");
   args_info->host_orig = NULL;
   args_info->port_arg = 59900;
@@ -168,18 +171,19 @@ void init_args_info(struct icee_args_info *args_info)
   args_info->nsteps_help = icee_args_info_help[8] ;
   args_info->params_help = icee_args_info_help[9] ;
   args_info->prefix_help = icee_args_info_help[10] ;
-  args_info->host_help = icee_args_info_help[11] ;
-  args_info->port_help = icee_args_info_help[12] ;
-  args_info->remotehost_help = icee_args_info_help[13] ;
-  args_info->remoteport_help = icee_args_info_help[14] ;
-  args_info->method_help = icee_args_info_help[15] ;
-  args_info->verbose_help = icee_args_info_help[16] ;
-  args_info->contact_help = icee_args_info_help[17] ;
-  args_info->passive_help = icee_args_info_help[18] ;
-  args_info->nclient_help = icee_args_info_help[19] ;
-  args_info->isnative_help = icee_args_info_help[20] ;
-  args_info->remotelist_help = icee_args_info_help[21] ;
-  args_info->attrlist_help = icee_args_info_help[22] ;
+  args_info->append_help = icee_args_info_help[11] ;
+  args_info->host_help = icee_args_info_help[12] ;
+  args_info->port_help = icee_args_info_help[13] ;
+  args_info->remotehost_help = icee_args_info_help[14] ;
+  args_info->remoteport_help = icee_args_info_help[15] ;
+  args_info->method_help = icee_args_info_help[16] ;
+  args_info->verbose_help = icee_args_info_help[17] ;
+  args_info->contact_help = icee_args_info_help[18] ;
+  args_info->passive_help = icee_args_info_help[19] ;
+  args_info->nclient_help = icee_args_info_help[20] ;
+  args_info->isnative_help = icee_args_info_help[21] ;
+  args_info->remotelist_help = icee_args_info_help[22] ;
+  args_info->attrlist_help = icee_args_info_help[23] ;
   
 }
 
@@ -340,6 +344,8 @@ icee_cmdline_parser_dump(FILE *outfile, struct icee_args_info *args_info)
     write_into_file(outfile, "params", args_info->params_orig, 0);
   if (args_info->prefix_given)
     write_into_file(outfile, "prefix", args_info->prefix_orig, 0);
+  if (args_info->append_given)
+    write_into_file(outfile, "append", 0, 0 );
   if (args_info->host_given)
     write_into_file(outfile, "host", args_info->host_orig, 0);
   if (args_info->port_given)
@@ -641,6 +647,7 @@ icee_cmdline_parser_internal (
         { "nsteps",	1, NULL, 0 },
         { "params",	1, NULL, 0 },
         { "prefix",	1, NULL, 0 },
+        { "append",	0, NULL, 0 },
         { "host",	1, NULL, 0 },
         { "port",	1, NULL, 'p' },
         { "remotehost",	1, NULL, 's' },
@@ -870,6 +877,18 @@ icee_cmdline_parser_internal (
                 &(local_args_info.prefix_given), optarg, 0, "", ARG_STRING,
                 check_ambiguity, override, 0, 0,
                 "prefix", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* append.  */
+          else if (strcmp (long_options[option_index].name, "append") == 0)
+          {
+          
+          
+            if (update_arg((void *)&(args_info->append_flag), 0, &(args_info->append_given),
+                &(local_args_info.append_given), optarg, 0, 0, ARG_FLAG,
+                check_ambiguity, override, 1, 0, "append", '-',
                 additional_error))
               goto failure;
           

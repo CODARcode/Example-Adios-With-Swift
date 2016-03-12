@@ -161,6 +161,7 @@ int main (int argc, char ** argv)
 
         int64_t       m_adios_group;
         int64_t       m_adios_file;
+        string amode = "w";
 
         adios_declare_group (&m_adios_group, "restart", "", adios_flag_yes);
         adios_select_method (m_adios_group, adios_write_method.c_str(), initstr.c_str(), "");
@@ -202,7 +203,8 @@ int main (int argc, char ** argv)
             for (uint64_t i = 0; i < NX; i++)
                 t[i] = rank + it + 1.0;
 
-            string amode = (!it)? "w" : "w";
+            if (args_info.append_flag)
+                amode = (!it)? "w" : "a";
 
             //MPI_Barrier(comm);
             double t_start = MPI_Wtime();
