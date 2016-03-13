@@ -41,7 +41,7 @@ const char *icee_args_info_help[] = {
   "      --timeout=FLOAT       Timeout  (default=`10.0')",
   "      --sleep=INT           interval time  (default=`5')",
   "      --nsteps=INT          number of time steps  (default=`10')",
-  "      --params=STRING       ADIOS write method params  (default=`')",
+  "      --params=STRING       method params  (default=`')",
   "      --prefix=STRING       prefix  (default=`')",
   "      --append              append  (default=off)",
   "      --host=STRING         local hostname  (default=`localhost')",
@@ -853,7 +853,7 @@ icee_cmdline_parser_internal (
               goto failure;
           
           }
-          /* ADIOS write method params.  */
+          /* method params.  */
           else if (strcmp (long_options[option_index].name, "params") == 0)
           {
           

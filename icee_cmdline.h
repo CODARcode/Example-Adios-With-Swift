@@ -63,9 +63,9 @@ struct icee_args_info
   int nsteps_arg;	/**< @brief number of time steps (default='10').  */
   char * nsteps_orig;	/**< @brief number of time steps original value given at command line.  */
   const char *nsteps_help; /**< @brief number of time steps help description.  */
-  char * params_arg;	/**< @brief ADIOS write method params (default='').  */
-  char * params_orig;	/**< @brief ADIOS write method params original value given at command line.  */
-  const char *params_help; /**< @brief ADIOS write method params help description.  */
+  char * params_arg;	/**< @brief method params (default='').  */
+  char * params_orig;	/**< @brief method params original value given at command line.  */
+  const char *params_help; /**< @brief method params help description.  */
   char * prefix_arg;	/**< @brief prefix (default='').  */
   char * prefix_orig;	/**< @brief prefix original value given at command line.  */
   const char *prefix_help; /**< @brief prefix help description.  */

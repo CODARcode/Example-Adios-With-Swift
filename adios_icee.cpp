@@ -258,7 +258,7 @@ int main (int argc, char ** argv)
         adios_read_init_method (adios_read_method, comm, initstr.c_str());
 
         f = adios_read_open (fname.c_str(), adios_read_method,
-                             comm, ADIOS_LOCKMODE_ALL timeout_sec);
+                             comm, ADIOS_LOCKMODE_ALL, timeout_sec);
         if (adios_errno == err_file_not_found)
         {
             printf ("rank %d: Stream not found after waiting %f seconds: %s\n",
@@ -291,6 +291,7 @@ int main (int argc, char ** argv)
             {
                 printf("===== SUMMARY =====\n");
                 printf("%10s : %s\n", "Method", args_info.readmethod_arg);
+                printf("%10s : %s\n", "Params", initstr.c_str());
                 printf("%10s : %'d (seconds)\n", "Interval", interval_sec);
                 printf("%10s : %'d\n", "PEs", size);
                 printf("%10s : %'llu\n", "Length", v->dims[0]);

@@ -11,7 +11,7 @@ option "len" n "array length" longlong optional default="1048576"
 option "timeout" - "Timeout" float optional default="10.0"
 option "sleep" - "interval time" int optional default="5"
 option "nsteps" - "number of time steps" int optional default="10"
-option "params" - "ADIOS write method params" string optional default=""
+option "params" - "method params" string optional default=""
 option "prefix" - "prefix" string optional default=""
 option "append" - "append" flag off
 
