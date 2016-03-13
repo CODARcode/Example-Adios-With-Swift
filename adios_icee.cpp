@@ -251,14 +251,18 @@ int main (int argc, char ** argv)
         ADIOS_FILE * f;
         ADIOS_VARINFO * v;
         ADIOS_SELECTION * sel;
+        int err;
 
         char *data = NULL;
         uint64_t start[2], count[2];
 
-        adios_read_init_method (adios_read_method, comm, initstr.c_str());
+        err = adios_read_init_method (adios_read_method, comm, initstr.c_str());
+        if (!err) {
+            printf ("%s\n", adios_errmsg());
+        }
 
-        f = adios_read_open (fname.c_str(), adios_read_method,
-                             comm, ADIOS_LOCKMODE_ALL, timeout_sec);
+        f = adios_read_open (fname.c_str(), adios_read_method, comm,
+                             ADIOS_LOCKMODE_ALL, timeout_sec);
         if (adios_errno == err_file_not_found)
         {
             printf ("rank %d: Stream not found after waiting %f seconds: %s\n",
@@ -302,6 +306,12 @@ int main (int argc, char ** argv)
             data = (char *) malloc (slice_size * sizeof(char));
             assert(data != NULL);
 
+            if (rank==0)
+            {
+                printf("    %14s %5s %5s %9s %12s %12s %s\n", "timestep", "seq", "rank", "elap(sec)", "local(MiB/s)", "global(MiB/s)", "check");
+                printf("    %14s %5s %5s %9s %12s %12s %s\n", "--------", "---", "----", "---------", "------------", "-------------", "-----");
+            }
+
             /* Processing loop over the steps (we are already in the first one) */
             //while (adios_errno != err_end_of_stream) {
             for (int it =0; it < nsteps; it++)
@@ -311,7 +321,7 @@ int main (int argc, char ** argv)
                 double t_start = MPI_Wtime();
 
                 sel = adios_selection_boundingbox (v->ndim, start, count);
-                adios_schedule_read (f, sel, "temperature", 0, 1, data);
+                adios_schedule_read_byid (f, sel, v->varid, 0, 1, data);
                 adios_perform_reads (f, 1);
                 adios_release_step (f);
 
@@ -329,14 +339,6 @@ int main (int argc, char ** argv)
                     sum += (double) data[i];
                 }
 
-                if (f->current_step==0 && rank==0)
-                {
-                    printf("    %14s %5s %5s %9s %12s %12s %s\n", "timestep", "seq", "rank", "elap(sec)", "local(MiB/s)", "global(MiB/s)", "check");
-                    printf("    %14s %5s %5s %9s %12s %12s %s\n", "--------", "---", "----", "---------", "------------", "-------------", "-----");
-                }
-                MPI_Barrier(comm);
-                sleep_with_interval((double)interval_sec, 100);
-
                 printf(">>> %14.03f %5d %5d %9.03f %'12.03f %'12.03f  %'.01f\n",
                        t_end, f->current_step, rank, t_elap,
                        (double)(count[0])*8/t_elap/1024.0/1024.0,
@@ -344,6 +346,8 @@ int main (int argc, char ** argv)
                        sum);
 
                 if (it==nsteps-1) break;
+
+                sleep_with_interval((double)interval_sec, 100);
 
                 // advance to 1) next available step with 2) blocking wait
                 adios_advance_step (f, 0, timeout_sec);
