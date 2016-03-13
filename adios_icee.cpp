@@ -258,7 +258,7 @@ int main (int argc, char ** argv)
         adios_read_init_method (adios_read_method, comm, initstr.c_str());
 
         f = adios_read_open (fname.c_str(), adios_read_method,
-                             comm, ADIOS_LOCKMODE_NONE, timeout_sec);
+                             comm, ADIOS_LOCKMODE_ALL timeout_sec);
         if (adios_errno == err_file_not_found)
         {
             printf ("rank %d: Stream not found after waiting %f seconds: %s\n",
@@ -312,6 +312,7 @@ int main (int argc, char ** argv)
                 sel = adios_selection_boundingbox (v->ndim, start, count);
                 adios_schedule_read (f, sel, "temperature", 0, 1, data);
                 adios_perform_reads (f, 1);
+                adios_release_step (f);
 
                 //MPI_Barrier(comm);
                 double t_end = MPI_Wtime();
