@@ -25,15 +25,19 @@
 
 using namespace std;
 
-#define TYPE double
-#define ADIOS_TYPE adios_double
+#ifndef ATYPE
+#define ATYPE       double
+#endif
+#ifndef ADIOS_ATYPE
+#define ADIOS_ATYPE adios_double
+#endif
 
 #include <sys/time.h>
 struct timeval adios_timer_tp;
 double adios_gettime()
 {
     gettimeofday(&adios_timer_tp, NULL); \
-        return  ((double)adios_timer_tp.tv_sec + ((double)adios_timer_tp.tv_usec)/1000000.0);
+    return  ((double)adios_timer_tp.tv_sec + ((double)adios_timer_tp.tv_usec)/1000000.0);
 }
 
 void sleep_with_interval (double timeout_sec, int interval_ms)
@@ -69,6 +73,8 @@ int main (int argc, char ** argv)
     enum ADIOS_READ_METHOD adios_read_method = ADIOS_READ_METHOD_BP;
 
     uint64_t NX = args_info.len_arg;
+    uint64_t NY = args_info.chunk_arg;
+
     float timeout_sec = args_info.timeout_arg;
     int   interval_sec = args_info.sleep_arg;
     int   nsteps = args_info.nsteps_arg;
@@ -155,7 +161,7 @@ int main (int argc, char ** argv)
     if (mode == SERVER)
     {
         uint64_t    G, O;
-        TYPE        *t = (TYPE *) malloc(NX * sizeof(TYPE));
+        ATYPE        *t = (ATYPE *) malloc(NX * NY * sizeof(ATYPE));
         assert(t != NULL);
         uint64_t    adios_groupsize, adios_totalsize;
 
@@ -173,6 +179,10 @@ int main (int argc, char ** argv)
                           ,"", adios_long
                           ,0, 0, 0);
 
+        adios_define_var (m_adios_group, "NY"
+                          ,"", adios_long
+                          ,0, 0, 0);
+
         adios_define_var (m_adios_group, "G"
                           ,"", adios_long
                           ,0, 0, 0);
@@ -182,8 +192,8 @@ int main (int argc, char ** argv)
                           ,0, 0, 0);
 
         adios_define_var (m_adios_group, "temperature"
-                          ,"", ADIOS_TYPE
-                          ,"NX", "G", "O");
+                          ,"", ADIOS_ATYPE
+                          ,"NX,NY", "G,NY", "O,0");
 
         G = NX * size;
 
@@ -194,16 +204,16 @@ int main (int argc, char ** argv)
             printf("%10s : %s\n", "Params", initstr.c_str());
             printf("%10s : %'d (seconds)\n", "Interval", interval_sec);
             printf("%10s : %'d\n", "PEs", size);
-            printf("%10s : %'llu\n", "Length", NX);
-            printf("%10s : %'.02f (MiB/proc)\n", "Data/PE", NX*sizeof(TYPE)/1024.0/1024.0);
-            printf("%10s : %'.02f (MiB)\n", "Total", G*sizeof(TYPE)/1024.0/1024.0);
+            printf("%10s : %'llu x %'llu\n", "Local dims", NX, NY);
+            printf("%10s : %'.02f (MiB/proc)\n", "Data/PE", NX*NY*sizeof(ATYPE)/1024.0/1024.0);
+            printf("%10s : %'.02f (MiB)\n", "Total", G*NY*sizeof(ATYPE)/1024.0/1024.0);
             printf("%10s : %'d\n", "Steps", nsteps);
             printf("===================\n\n");
         }
 
         for (int it =0; it < nsteps; it++)
         {
-            for (uint64_t i = 0; i < NX; i++)
+            for (uint64_t i = 0; i < NX*NY; i++)
                 t[i] = rank + it + 1.0;
 
             if (args_info.append_flag)
@@ -213,11 +223,12 @@ int main (int argc, char ** argv)
             double t_start = MPI_Wtime();
 
             adios_open (&m_adios_file, "restart", fname.c_str(), amode.c_str(), comm);
-            adios_groupsize = 8 + 8 + 8 + NX * 1;
+            adios_groupsize = 8 + 8 + 8 + NX * NY * sizeof(ATYPE);
             adios_group_size (m_adios_file, adios_groupsize, &adios_totalsize);
             //adios_set_max_buffer_size (adios_groupsize*size/1024L/1024L+1); // in MB
 
             adios_write(m_adios_file, "NX", (void *) &NX);
+            adios_write(m_adios_file, "NY", (void *) &NY);
             adios_write(m_adios_file, "G", (void *) &G);
             O = rank * NX;
             adios_write(m_adios_file, "O", (void *) &O);
@@ -256,7 +267,7 @@ int main (int argc, char ** argv)
         ADIOS_SELECTION * sel;
         int err;
 
-        TYPE *data = NULL;
+        ATYPE *data = NULL;
         uint64_t start[2], count[2];
 
         err = adios_read_init_method (adios_read_method, comm, initstr.c_str());
@@ -284,9 +295,12 @@ int main (int argc, char ** argv)
             v = adios_inq_var (f, "temperature");
 
             uint64_t slice_size = v->dims[0]/size;
+            uint64_t chunk_size = v->dims[1];
 
             start[0] = rank * slice_size;
             count[0] = slice_size;
+            start[1] = 0;
+            count[1] = chunk_size;
 
             if (rank == size-1)
             {
@@ -306,7 +320,7 @@ int main (int argc, char ** argv)
                 printf("===================\n\n");
             }
 
-            data = (TYPE *) malloc (slice_size * sizeof(TYPE));
+            data = (ATYPE *) malloc (slice_size * chunk_size * sizeof(ATYPE));
             assert(data != NULL);
 
             if (rank==0)
@@ -337,15 +351,15 @@ int main (int argc, char ** argv)
                 //timetext[24] = '\0';
 
                 double sum = 0.0;
-                for (uint64_t i = 0; i < slice_size; i++)
+                for (uint64_t i = 0; i < slice_size * chunk_size; i++)
                 {
                     sum += (double) data[i];
                 }
 
                 printf(">>> %14.03f %5d %5d %9.03f %'12.03f %'12.03f  %'.01f\n",
                        t_end, f->current_step, rank, t_elap,
-                       (double)(count[0])*8/t_elap/1024.0/1024.0,
-                       (double)(v->dims[0])*8/t_elap/1024.0/1024.0,
+                       (double)(count[0]*chunk_size)*sizeof(ATYPE)/t_elap/1024.0/1024.0,
+                       (double)(v->dims[0]*chunk_size)*sizeof(ATYPE)/t_elap/1024.0/1024.0,
                        sum);
 
                 if (it==nsteps-1) break;

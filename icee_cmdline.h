@@ -48,12 +48,19 @@ struct icee_args_info
   char * readmethod_orig;	/**< @brief ADIOS read method original value given at command line.  */
   const char *readmethod_help; /**< @brief ADIOS read method help description.  */
   #ifdef HAVE_LONG_LONG
-  long long int len_arg;	/**< @brief array length (default=1048576).  */
+  long long int len_arg;	/**< @brief array length (default=1).  */
   #else
-  long len_arg;	/**< @brief array length (default=1048576).  */
+  long len_arg;	/**< @brief array length (default=1).  */
   #endif
   char * len_orig;	/**< @brief array length original value given at command line.  */
   const char *len_help; /**< @brief array length help description.  */
+  #ifdef HAVE_LONG_LONG
+  long long int chunk_arg;	/**< @brief chunk length (default=1048576).  */
+  #else
+  long chunk_arg;	/**< @brief chunk length (default=1048576).  */
+  #endif
+  char * chunk_orig;	/**< @brief chunk length original value given at command line.  */
+  const char *chunk_help; /**< @brief chunk length help description.  */
   float timeout_arg;	/**< @brief Timeout (default='10.0').  */
   char * timeout_orig;	/**< @brief Timeout original value given at command line.  */
   const char *timeout_help; /**< @brief Timeout help description.  */
@@ -112,6 +119,7 @@ struct icee_args_info
   unsigned int writemethod_given ;	/**< @brief Whether writemethod was given.  */
   unsigned int readmethod_given ;	/**< @brief Whether readmethod was given.  */
   unsigned int len_given ;	/**< @brief Whether len was given.  */
+  unsigned int chunk_given ;	/**< @brief Whether chunk was given.  */
   unsigned int timeout_given ;	/**< @brief Whether timeout was given.  */
   unsigned int sleep_given ;	/**< @brief Whether sleep was given.  */
   unsigned int nsteps_given ;	/**< @brief Whether nsteps was given.  */

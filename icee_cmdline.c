@@ -37,7 +37,8 @@ const char *icee_args_info_help[] = {
   "  -c, --client              Client mode  (default=off)",
   "  -w, --writemethod=STRING  ADIOS write method  (default=`POSIX1')",
   "  -r, --readmethod=STRING   ADIOS read method  (default=`BP')",
-  "  -n, --len=LONGLONG        array length  (default=`1048576')",
+  "  -n, --len=LONGLONG        array length  (default=`1')",
+  "      --chunk=LONGLONG      chunk length  (default=`1048576')",
   "      --timeout=FLOAT       Timeout  (default=`10.0')",
   "      --sleep=INT           interval time  (default=`5')",
   "      --nsteps=INT          number of time steps  (default=`10')",
@@ -89,6 +90,7 @@ void clear_given (struct icee_args_info *args_info)
   args_info->writemethod_given = 0 ;
   args_info->readmethod_given = 0 ;
   args_info->len_given = 0 ;
+  args_info->chunk_given = 0 ;
   args_info->timeout_given = 0 ;
   args_info->sleep_given = 0 ;
   args_info->nsteps_given = 0 ;
@@ -118,8 +120,10 @@ void clear_args (struct icee_args_info *args_info)
   args_info->writemethod_orig = NULL;
   args_info->readmethod_arg = gengetopt_strdup ("BP");
   args_info->readmethod_orig = NULL;
-  args_info->len_arg = 1048576;
+  args_info->len_arg = 1;
   args_info->len_orig = NULL;
+  args_info->chunk_arg = 1048576;
+  args_info->chunk_orig = NULL;
   args_info->timeout_arg = 10.0;
   args_info->timeout_orig = NULL;
   args_info->sleep_arg = 5;
@@ -166,24 +170,25 @@ void init_args_info(struct icee_args_info *args_info)
   args_info->writemethod_help = icee_args_info_help[3] ;
   args_info->readmethod_help = icee_args_info_help[4] ;
   args_info->len_help = icee_args_info_help[5] ;
-  args_info->timeout_help = icee_args_info_help[6] ;
-  args_info->sleep_help = icee_args_info_help[7] ;
-  args_info->nsteps_help = icee_args_info_help[8] ;
-  args_info->params_help = icee_args_info_help[9] ;
-  args_info->prefix_help = icee_args_info_help[10] ;
-  args_info->append_help = icee_args_info_help[11] ;
-  args_info->host_help = icee_args_info_help[12] ;
-  args_info->port_help = icee_args_info_help[13] ;
-  args_info->remotehost_help = icee_args_info_help[14] ;
-  args_info->remoteport_help = icee_args_info_help[15] ;
-  args_info->method_help = icee_args_info_help[16] ;
-  args_info->verbose_help = icee_args_info_help[17] ;
-  args_info->contact_help = icee_args_info_help[18] ;
-  args_info->passive_help = icee_args_info_help[19] ;
-  args_info->nclient_help = icee_args_info_help[20] ;
-  args_info->isnative_help = icee_args_info_help[21] ;
-  args_info->remotelist_help = icee_args_info_help[22] ;
-  args_info->attrlist_help = icee_args_info_help[23] ;
+  args_info->chunk_help = icee_args_info_help[6] ;
+  args_info->timeout_help = icee_args_info_help[7] ;
+  args_info->sleep_help = icee_args_info_help[8] ;
+  args_info->nsteps_help = icee_args_info_help[9] ;
+  args_info->params_help = icee_args_info_help[10] ;
+  args_info->prefix_help = icee_args_info_help[11] ;
+  args_info->append_help = icee_args_info_help[12] ;
+  args_info->host_help = icee_args_info_help[13] ;
+  args_info->port_help = icee_args_info_help[14] ;
+  args_info->remotehost_help = icee_args_info_help[15] ;
+  args_info->remoteport_help = icee_args_info_help[16] ;
+  args_info->method_help = icee_args_info_help[17] ;
+  args_info->verbose_help = icee_args_info_help[18] ;
+  args_info->contact_help = icee_args_info_help[19] ;
+  args_info->passive_help = icee_args_info_help[20] ;
+  args_info->nclient_help = icee_args_info_help[21] ;
+  args_info->isnative_help = icee_args_info_help[22] ;
+  args_info->remotelist_help = icee_args_info_help[23] ;
+  args_info->attrlist_help = icee_args_info_help[24] ;
   
 }
 
@@ -269,6 +274,7 @@ icee_cmdline_parser_release (struct icee_args_info *args_info)
   free_string_field (&(args_info->readmethod_arg));
   free_string_field (&(args_info->readmethod_orig));
   free_string_field (&(args_info->len_orig));
+  free_string_field (&(args_info->chunk_orig));
   free_string_field (&(args_info->timeout_orig));
   free_string_field (&(args_info->sleep_orig));
   free_string_field (&(args_info->nsteps_orig));
@@ -334,6 +340,8 @@ icee_cmdline_parser_dump(FILE *outfile, struct icee_args_info *args_info)
     write_into_file(outfile, "readmethod", args_info->readmethod_orig, 0);
   if (args_info->len_given)
     write_into_file(outfile, "len", args_info->len_orig, 0);
+  if (args_info->chunk_given)
+    write_into_file(outfile, "chunk", args_info->chunk_orig, 0);
   if (args_info->timeout_given)
     write_into_file(outfile, "timeout", args_info->timeout_orig, 0);
   if (args_info->sleep_given)
@@ -642,6 +650,7 @@ icee_cmdline_parser_internal (
         { "writemethod",	1, NULL, 'w' },
         { "readmethod",	1, NULL, 'r' },
         { "len",	1, NULL, 'n' },
+        { "chunk",	1, NULL, 0 },
         { "timeout",	1, NULL, 0 },
         { "sleep",	1, NULL, 0 },
         { "nsteps",	1, NULL, 0 },
@@ -718,7 +727,7 @@ icee_cmdline_parser_internal (
         
           if (update_arg( (void *)&(args_info->len_arg), 
                &(args_info->len_orig), &(args_info->len_given),
-              &(local_args_info.len_given), optarg, 0, "1048576", ARG_LONGLONG,
+              &(local_args_info.len_given), optarg, 0, "1", ARG_LONGLONG,
               check_ambiguity, override, 0, 0,
               "len", 'n',
               additional_error))
@@ -811,8 +820,22 @@ icee_cmdline_parser_internal (
           break;
 
         case 0:	/* Long option with no short option */
+          /* chunk length.  */
+          if (strcmp (long_options[option_index].name, "chunk") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->chunk_arg), 
+                 &(args_info->chunk_orig), &(args_info->chunk_given),
+                &(local_args_info.chunk_given), optarg, 0, "1048576", ARG_LONGLONG,
+                check_ambiguity, override, 0, 0,
+                "chunk", '-',
+                additional_error))
+              goto failure;
+          
+          }
           /* Timeout.  */
-          if (strcmp (long_options[option_index].name, "timeout") == 0)
+          else if (strcmp (long_options[option_index].name, "timeout") == 0)
           {
           
           
