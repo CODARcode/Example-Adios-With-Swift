@@ -8,7 +8,7 @@ option "client" c "Client mode" flag off
 option "writemethod" w "ADIOS write method" string optional default="POSIX1"
 option "readmethod" r "ADIOS read method" string optional default="BP"
 option "len" n "array length" longlong optional default="1"
-option "chunk" - "chunk length" longlong optional default="1048576"
+option "chunk" - "chunk length" longlong optional default="131072"
 option "timeout" - "Timeout" float optional default="10.0"
 option "sleep" - "interval time" int optional default="5"
 option "nsteps" - "number of time steps" int optional default="10"

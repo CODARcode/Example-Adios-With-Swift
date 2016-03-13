@@ -55,9 +55,9 @@ struct icee_args_info
   char * len_orig;	/**< @brief array length original value given at command line.  */
   const char *len_help; /**< @brief array length help description.  */
   #ifdef HAVE_LONG_LONG
-  long long int chunk_arg;	/**< @brief chunk length (default=1048576).  */
+  long long int chunk_arg;	/**< @brief chunk length (default=131072).  */
   #else
-  long chunk_arg;	/**< @brief chunk length (default=1048576).  */
+  long chunk_arg;	/**< @brief chunk length (default=131072).  */
   #endif
   char * chunk_orig;	/**< @brief chunk length original value given at command line.  */
   const char *chunk_help; /**< @brief chunk length help description.  */
