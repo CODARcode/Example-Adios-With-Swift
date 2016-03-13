@@ -25,6 +25,9 @@
 
 using namespace std;
 
+#define TYPE double
+#define ADIOS_TYPE adios_double
+
 #include <sys/time.h>
 struct timeval adios_timer_tp;
 double adios_gettime()
@@ -100,8 +103,8 @@ int main (int argc, char ** argv)
     mode_t mode = SERVER;
 
     std::stringstream s;
-    time_t ltime;
-    char *timetext;
+    //time_t ltime;
+    //char *timetext;
 
     if (args_info.client_flag)
         mode = CLIENT;
@@ -152,7 +155,7 @@ int main (int argc, char ** argv)
     if (mode == SERVER)
     {
         uint64_t    G, O;
-        char        *t = (char *) malloc(NX * sizeof(char));
+        TYPE        *t = (TYPE *) malloc(NX * sizeof(TYPE));
         assert(t != NULL);
         uint64_t    adios_groupsize, adios_totalsize;
 
@@ -179,7 +182,7 @@ int main (int argc, char ** argv)
                           ,0, 0, 0);
 
         adios_define_var (m_adios_group, "temperature"
-                          ,"", adios_byte
+                          ,"", ADIOS_TYPE
                           ,"NX", "G", "O");
 
         G = NX * size;
@@ -192,8 +195,8 @@ int main (int argc, char ** argv)
             printf("%10s : %'d (seconds)\n", "Interval", interval_sec);
             printf("%10s : %'d\n", "PEs", size);
             printf("%10s : %'llu\n", "Length", NX);
-            printf("%10s : %'.02f (MiB/proc)\n", "Data/PE", NX/1024.0/1024.0);
-            printf("%10s : %'.02f (MiB)\n", "Total", G/1024.0/1024.0);
+            printf("%10s : %'.02f (MiB/proc)\n", "Data/PE", NX*sizeof(TYPE)/1024.0/1024.0);
+            printf("%10s : %'.02f (MiB)\n", "Total", G*sizeof(TYPE)/1024.0/1024.0);
             printf("%10s : %'d\n", "Steps", nsteps);
             printf("===================\n\n");
         }
@@ -253,7 +256,7 @@ int main (int argc, char ** argv)
         ADIOS_SELECTION * sel;
         int err;
 
-        char *data = NULL;
+        TYPE *data = NULL;
         uint64_t start[2], count[2];
 
         err = adios_read_init_method (adios_read_method, comm, initstr.c_str());
@@ -303,7 +306,7 @@ int main (int argc, char ** argv)
                 printf("===================\n\n");
             }
 
-            data = (char *) malloc (slice_size * sizeof(char));
+            data = (TYPE *) malloc (slice_size * sizeof(TYPE));
             assert(data != NULL);
 
             if (rank==0)
