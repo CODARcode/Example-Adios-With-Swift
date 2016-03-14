@@ -315,7 +315,7 @@ int main (int argc, char ** argv)
                 printf("%10s : %s\n", "Params", initstr.c_str());
                 printf("%10s : %'d (seconds)\n", "Interval", interval_sec);
                 printf("%10s : %'d\n", "PEs", size);
-                printf("%10s : %'llu\n", "Length", v->dims[0]);
+                printf("%10s : %'llu x %'llu\n", "Global dims", v->dims[0], v->dims[1]);
                 printf("%10s : %'d\n", "Steps", nsteps);
                 printf("===================\n\n");
             }
