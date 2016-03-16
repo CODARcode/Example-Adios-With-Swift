@@ -223,7 +223,7 @@ int main (int argc, char ** argv)
             double t_start = MPI_Wtime();
 
             adios_open (&m_adios_file, "restart", fname.c_str(), amode.c_str(), comm);
-            adios_groupsize = 8 + 8 + 8 + NX * NY * sizeof(ATYPE);
+            adios_groupsize = 4 * 8 + NX * NY * sizeof(ATYPE);
             adios_group_size (m_adios_file, adios_groupsize, &adios_totalsize);
             //adios_set_max_buffer_size (adios_groupsize*size/1024L/1024L+1); // in MB
 
