@@ -172,7 +172,7 @@ int main (int argc, char ** argv)
         int64_t       m_adios_file;
         string amode = "w";
 
-        adios_declare_group (&m_adios_group, "restart", "", adios_flag_yes);
+        adios_declare_group (&m_adios_group, "restart", "", adios_flag_no);
         adios_select_method (m_adios_group, adios_write_method.c_str(), initstr.c_str(), "");
 
         adios_define_var (m_adios_group, "NX"
