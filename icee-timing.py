@@ -100,27 +100,29 @@ if args.summary:
         print '%7s' % 'SEQ', ' '.join(map(lambda x: '%7s' % ('#'+str(x)), range(nsteps))), \
             '%7s' % 'AVG', '%7s' % 'STD'
         print '%7s' % 'Time', ' '.join(map(lambda x: '%7.3f'%x, elap[:,0])), \
-            '%7.3f' % np.mean(elap[:,0]), '%7.3f' % np.std(elap[:,0]) 
+            '%7.3f' % np.mean(elap[:,0]), '%7.3f' % np.std(elap[:,0])
         print '%7s' % 'AVG', ' '.join(map(lambda x: '%7.3f'%x, np.mean(elap, 1))), \
-            '%7.3f' % np.mean(elap[:,:]), '%7.3f' % np.std(elap[:,:])             
+            '%7.3f' % np.mean(elap[:,:]), '%7.3f' % np.std(elap[:,:])
         print '%7s' % 'STD', ' '.join(map(lambda x: '%7.3f'%x, np.std(elap, 1)))
         print '%7s' % 'MIN', ' '.join(map(lambda x: '%7.3f'%x, np.min(elap, 1)))
         print '%7s' % 'MAX', ' '.join(map(lambda x: '%7.3f'%x, np.max(elap, 1)))
-        
+
 
 if args.save:
-    import matplotlib
+    import matplotlib as mpl
     import matplotlib.pyplot as plt
     from matplotlib.ticker import FormatStrFormatter
     import os
-    
+
+    mpl.rcParams['figure.figsize'] = (5.0, 3.75) # Original: 8x6
+
     def to_percent(y, position):
         ## Ignore the passed in position. This has the effect of scaling the default
         ## tick locations.
         s = str(100 * y)
 
         # The percent symbol needs escaping in latex
-        if matplotlib.rcParams['text.usetex'] is True:
+        if mpl.rcParams['text.usetex'] is True:
             return s + r'$\%$'
         else:
             return s + '%'
@@ -128,7 +130,7 @@ if args.save:
     prefix = os.path.splitext(os.path.basename(args.logfile[0]))[0]
     if len(args.logfile) > 1:
         prefix = prefix+'-multi'
-    
+
     plt.figure(1)
     p = plt.plot(elap)
     if ymin is not None:
@@ -163,8 +165,8 @@ if args.save:
     plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
     plt.xlabel('I/O Throughput (MiB/s)')
     plt.ylabel('Frequency (%)')
-    plt.savefig(prefix+'-fig4.pdf')
-    plt.savefig(prefix+'-fig4.png')
+    plt.savefig(prefix+'-fig4.pdf', bbox_inches='tight')
+    plt.savefig(prefix+'-fig4.png', bbox_inches='tight')
 
     plt.figure(5)
     plt.errorbar(np.arange(thrp.shape[0]), np.mean(thrp, 1), yerr=np.std(thrp, 1))
@@ -174,7 +176,7 @@ if args.save:
     plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
     plt.xlabel('Timestep')
     plt.ylabel('I/O Throughput (MiB/s)')
-    plt.savefig(prefix+'-fig5.pdf')
-    plt.savefig(prefix+'-fig5.png')
+    plt.savefig(prefix+'-fig5.pdf', bbox_inches='tight')
+    plt.savefig(prefix+'-fig5.png', bbox_inches='tight')
 
     if args.display: plt.show()
