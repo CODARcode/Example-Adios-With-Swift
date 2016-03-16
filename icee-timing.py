@@ -12,9 +12,10 @@ parser.add_argument('--filter', help='filter (e.g., ":,:", ":,2:")')
 parser.add_argument('--step', help='timestep', type=int, default=0)
 parser.add_argument('--rank', help='rank', type=int, default=0)
 parser.add_argument('--ymin', help='ymin', type=float)
-parser.add_argument('--display', action='store_true')
-parser.add_argument('--summary', action='store_true', default=True)
-parser.add_argument('--byrow', action='store_true', default=False)
+parser.add_argument('--display', help='xwin display', action='store_true', default=False)
+parser.add_argument('--save', help='save images', action='store_true', default=True)
+parser.add_argument('--summary', help='print summary', action='store_true', default=True)
+parser.add_argument('--byrow', help='print summary by rows', action='store_true', default=False)
 args = parser.parse_args()
 
 ymin = None if args.ymin is None else args.ymin
@@ -42,7 +43,7 @@ def get_timinglines(fname):
         x = line.split()
         elap[int(x[2]), int(x[3])] = float(x[4])
         stamp[int(x[2]), int(x[3])] = float(x[1])
-        thrp[int(x[2]), int(x[3])] = locale.atof(x[5])
+        thrp[int(x[2]), int(x[3])] = locale.atof(x[5]) ##local:5, global:6
 
     return elap, stamp, thrp
 
@@ -107,22 +108,44 @@ if args.summary:
         print '%7s' % 'MAX', ' '.join(map(lambda x: '%7.3f'%x, np.max(elap, 1)))
         
 
-if args.display:
+if args.save:
+    import matplotlib
     import matplotlib.pyplot as plt
+    from matplotlib.ticker import FormatStrFormatter
+    import os
+    
+    def to_percent(y, position):
+        ## Ignore the passed in position. This has the effect of scaling the default
+        ## tick locations.
+        s = str(100 * y)
 
+        # The percent symbol needs escaping in latex
+        if matplotlib.rcParams['text.usetex'] is True:
+            return s + r'$\%$'
+        else:
+            return s + '%'
+
+    prefix = os.path.splitext(os.path.basename(args.logfile[0]))[0]
+    if len(args.logfile) > 1:
+        prefix = prefix+'-multi'
+    
     plt.figure(1)
     p = plt.plot(elap)
     if ymin is not None:
         plt.ylim((ymin ,plt.ylim()[1]))
-        plt.legend(p, range(elap.shape[1]), loc='best', fontsize='small')
-        plt.xlabel('Timestep')
+    plt.legend(p, range(elap.shape[1]), loc='center left', bbox_to_anchor=(1,.5), fontsize='small', title='Rank')
+    plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
+    plt.xlabel('Timestep')
+    plt.ylabel('Time (s)')
 
     plt.figure(2)
     p = plt.plot(elap.T)
     if ymin is not None:
         plt.ylim((ymin ,plt.ylim()[1]))
-    plt.legend(p, range(elap.shape[0]), loc='best', fontsize='small')
+    plt.legend(p, range(elap.shape[0]), loc='center left', bbox_to_anchor=(1,.5), fontsize='small', title='Timestep')
+    plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
     plt.xlabel('Rank')
+    plt.ylabel('Time (s)')
 
     plt.figure(3)
     st = stamp[tid,:] - elap[tid,:]
@@ -130,8 +153,28 @@ if args.display:
     plt.errorbar(range(elap.shape[1]), ed, yerr=[elap[tid,:], (0,)*elap.shape[1]], fmt='none', elinewidth=2)
     plt.title('Step=%r' % tid)
     plt.xlabel('Rank')
+    plt.ylabel('Timeline (s)')
 
     plt.figure(4)
-    plt.hist(np.ravel(thrp), 20)
-    
-    plt.show()
+    x = np.ravel(thrp)
+    plt.hist(x, bins=20, weights=np.ones_like(x)/x.size*100.)
+    #formatter = FuncFormatter(to_percent)
+    #plt.gca().yaxis.set_major_formatter(formatter)
+    plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
+    plt.xlabel('I/O Throughput (MiB/s)')
+    plt.ylabel('Frequency (%)')
+    plt.savefig(prefix+'-fig4.pdf')
+    plt.savefig(prefix+'-fig4.png')
+
+    plt.figure(5)
+    plt.errorbar(np.arange(thrp.shape[0]), np.mean(thrp, 1), yerr=np.std(thrp, 1))
+    if ymin is not None:
+        plt.ylim((ymin ,plt.ylim()[1]))
+    plt.xlim((plt.xlim()[0]-1 ,plt.xlim()[1]))
+    plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
+    plt.xlabel('Timestep')
+    plt.ylabel('I/O Throughput (MiB/s)')
+    plt.savefig(prefix+'-fig5.pdf')
+    plt.savefig(prefix+'-fig5.png')
+
+    if args.display: plt.show()
