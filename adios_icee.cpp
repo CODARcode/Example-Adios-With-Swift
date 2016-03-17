@@ -64,6 +64,8 @@ void sleep_with_interval (double timeout_sec, int interval_ms)
 
 int main (int argc, char ** argv)
 {
+    setlinebuf(stdout);
+    
     struct icee_args_info args_info;
 
     if (icee_cmdline_parser (argc, argv, &args_info) != 0)
