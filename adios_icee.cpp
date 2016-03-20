@@ -22,6 +22,7 @@
 #include "icee_cmdline.h"
 #include <sstream>
 #include <time.h>
+#include <sys/resource.h>
 
 using namespace std;
 
@@ -65,7 +66,7 @@ void sleep_with_interval (double timeout_sec, int interval_ms)
 int main (int argc, char ** argv)
 {
     setlinebuf(stdout);
-    
+
     struct icee_args_info args_info;
 
     if (icee_cmdline_parser (argc, argv, &args_info) != 0)
@@ -168,7 +169,7 @@ int main (int argc, char ** argv)
         uint64_t    adios_groupsize, adios_totalsize;
 
         adios_init_noxml (comm);
-        adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 2048);
+        adios_set_max_buffer_size ((NX * NY * sizeof(ATYPE))/1024L/1024L + 1L);
 
         int64_t       m_adios_group;
         int64_t       m_adios_file;
@@ -394,6 +395,10 @@ int main (int argc, char ** argv)
 
     if (rank==0)
         printf ("Done.\n");
+
+    struct rusage r_usage;
+    getrusage(RUSAGE_SELF,&r_usage);
+    printf("Memory usage: %'.2f MiB\n",r_usage.ru_maxrss/1024.0/1024.0);
 
     MPI_Finalize ();
     return 0;
