@@ -394,11 +394,13 @@ int main (int argc, char ** argv)
     }
 
     if (rank==0)
+    {
         printf ("Done.\n");
 
-    struct rusage r_usage;
-    getrusage(RUSAGE_SELF,&r_usage);
-    printf("Memory usage: %'.2f MiB\n",r_usage.ru_maxrss/1024.0/1024.0);
+        struct rusage r_usage;
+        getrusage(RUSAGE_SELF,&r_usage);
+        printf("Memory usage: %'.2f MiB\n",r_usage.ru_maxrss/1024.0/1024.0);
+    }
 
     MPI_Finalize ();
     return 0;
