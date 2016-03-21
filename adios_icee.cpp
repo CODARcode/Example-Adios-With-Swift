@@ -169,7 +169,8 @@ int main (int argc, char ** argv)
         uint64_t    adios_groupsize, adios_totalsize;
 
         adios_init_noxml (comm);
-        adios_set_max_buffer_size ((NX * NY * sizeof(ATYPE))/1024L/1024L + 1L);
+        //adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, ((NX * NY * sizeof(ATYPE))>>20) + 1L);
+        adios_set_max_buffer_size (((NX * NY * sizeof(ATYPE))>>20) + 1L);
 
         int64_t       m_adios_group;
         int64_t       m_adios_file;
@@ -399,8 +400,16 @@ int main (int argc, char ** argv)
 
         struct rusage r_usage;
         getrusage(RUSAGE_SELF,&r_usage);
-        printf("Memory usage: %'.2f MiB\n",r_usage.ru_maxrss/1024.0/1024.0);
+        printf("Memory usage: %'.2f MiB\n", r_usage.ru_maxrss/1024.0/1024.0);
+
+        void *v = NULL;
+        int vval=-1, flag=-1;
+        MPI_Comm_get_attr(MPI_COMM_WORLD, MPI_WTIME_IS_GLOBAL, &v, &flag);
+        if (flag)
+            vval = *(int*)v;
+        printf("MPI_WTIME_IS_GLOBAL: %d\n", vval);
     }
+
 
     MPI_Finalize ();
     return 0;
