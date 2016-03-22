@@ -116,6 +116,7 @@ if args.save:
     import matplotlib as mpl
     import matplotlib.pyplot as plt
     from matplotlib.ticker import FormatStrFormatter
+    from matplotlib import ticker
     import matplotlib.mlab as mlab
     import os
 
@@ -149,6 +150,9 @@ if args.save:
         f.subplots_adjust(hspace=0)
         plt.setp([a.get_xticklabels() for a in f.axes[:-1]], visible=False)
 
+    def reject_outliers(data, m=2):
+        return data[abs(data - np.mean(data)) < m * np.std(data, ddof=1)]
+
     prefix = os.path.splitext(os.path.basename(args.logfile[0]))[0]
     if len(args.logfile) > 1:
         prefix = '%s+%dmore'%(prefix, len(args.logfile)-1)
@@ -180,23 +184,29 @@ if args.save:
     plt.ylabel('Timeline (s)')
 
     fig = plt.figure(4)
-    #x = np.ravel(thrp)
-    x = np.ravel(elap)
+    x = np.ravel(thrp)
+    #x = np.ravel(elap)
     x = x[~np.isnan(x)]
-    ax = fig.add_subplot(111)
+    x = reject_outliers(x, m=3)
     #n, bins, patches = ax.hist(x, bins=20, weights=np.ones_like(x)/x.size*100.)
-    n, bins, patches = ax.hist(x, bins=20, normed=1)
+    n, bins, patches = plt.hist(x, bins=20, normed=1)
     bincenters = 0.5*(bins[1:]+bins[:-1])
     #y = mlab.normpdf(bincenters, np.mean(x), np.std(x))*100.
-    y = mlab.normpdf(bincenters, np.mean(x), np.std(x))
-    l = ax.plot(bincenters, y, 'r--', linewidth=1)
+    y = mlab.normpdf(bincenters, np.mean(x), np.std(x, ddof=1))
+    l = plt.plot(bincenters, y, 'r--', linewidth=2)
+
+    formatter = ticker.ScalarFormatter(useMathText=True)
+    formatter.set_scientific(True)
+    formatter.set_powerlimits((-1,1))
+    plt.gca().yaxis.set_major_formatter(formatter)
 
     #formatter = FuncFormatter(to_percent)
     #plt.gca().yaxis.set_major_formatter(formatter)
     #ax.yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
-    ax.set_xlabel('I/O Throughput (MiB/s)')
-    #ax.set_ylabel('Frequency (%)')
-    ax.set_ylabel('Probability')
+    #plt.ylabel('Frequency (%)')
+    plt.xlabel('I/O Throughput (MiB/s)')
+    plt.ylabel('Probability')
+    #plt.grid(True)
     plt.savefig(prefix+'-fig4.pdf', bbox_inches='tight')
     plt.savefig(prefix+'-fig4.png', bbox_inches='tight')
 
