@@ -89,7 +89,7 @@ if args.summary:
             print '%9d' % t, \
                 '%9.3f' % elap[t,0], \
                 '%9.3f' % np.nanmean(elap[t,:]), \
-                '%9.3f' % np.nanstd(elap[t,:]), \
+                '%9.3f' % np.nanstd(elap[t,:], ddof=1), \
                 '%9.3f' % np.nanmin(elap[t,:]), \
                 '%9.3f' % np.nanmax(elap[t,:])
 
@@ -98,16 +98,16 @@ if args.summary:
             '%9.3f' % np.nanmean(elap[:,0]), \
             '%9.3f' % np.nanmean(elap[:,:])
         print '%9s' % 'STD', \
-            '%9.3f' % np.nanstd(elap[:,0]), \
-            '%9.3f' % np.nanstd(elap[:,:])
+            '%9.3f' % np.nanstd(elap[:,0], ddof=1), \
+            '%9.3f' % np.nanstd(elap[:,:], ddof=1)
     else:
         print '%7s' % 'SEQ', ' '.join(map(lambda x: '%7s' % ('#'+str(x)), range(nsteps))), \
             '%7s' % 'AVG', '%7s' % 'STD'
         print '%7s' % 'Time', ' '.join(map(lambda x: '%7.3f'%x, elap[:,0])), \
-            '%7.3f' % np.nanmean(elap[:,0]), '%7.3f' % np.nanstd(elap[:,0])
+            '%7.3f' % np.nanmean(elap[:,0]), '%7.3f' % np.nanstd(elap[:,0], ddof=1)
         print '%7s' % 'AVG', ' '.join(map(lambda x: '%7.3f'%x, np.nanmean(elap, 1))), \
-            '%7.3f' % np.nanmean(elap[:,:]), '%7.3f' % np.nanstd(elap[:,:])
-        print '%7s' % 'STD', ' '.join(map(lambda x: '%7.3f'%x, np.nanstd(elap, 1)))
+            '%7.3f' % np.nanmean(elap[:,:]), '%7.3f' % np.nanstd(elap[:,:], ddof=1)
+        print '%7s' % 'STD', ' '.join(map(lambda x: '%7.3f'%x, np.nanstd(elap, 1, ddof=1)))
         print '%7s' % 'MIN', ' '.join(map(lambda x: '%7.3f'%x, np.nanmin(elap, 1)))
         print '%7s' % 'MAX', ' '.join(map(lambda x: '%7.3f'%x, np.nanmax(elap, 1)))
 
@@ -180,7 +180,8 @@ if args.save:
     plt.ylabel('Timeline (s)')
 
     fig = plt.figure(4)
-    x = np.ravel(thrp)
+    #x = np.ravel(thrp)
+    x = np.ravel(elap)
     x = x[~np.isnan(x)]
     ax = fig.add_subplot(111)
     #n, bins, patches = ax.hist(x, bins=20, weights=np.ones_like(x)/x.size*100.)
@@ -200,7 +201,7 @@ if args.save:
     plt.savefig(prefix+'-fig4.png', bbox_inches='tight')
 
     plt.figure(5)
-    plt.errorbar(np.arange(thrp.shape[0]), np.nanmean(thrp, 1), yerr=np.nanstd(thrp, 1))
+    plt.errorbar(np.arange(thrp.shape[0]), np.nanmean(thrp, 1), yerr=np.nanstd(thrp, 1, ddof=1))
     if ymin is not None:
         plt.ylim((ymin, plt.ylim()[1]))
     plt.xlim((plt.xlim()[0]-1, plt.xlim()[1]))

@@ -169,8 +169,8 @@ int main (int argc, char ** argv)
         uint64_t    adios_groupsize, adios_totalsize;
 
         adios_init_noxml (comm);
-        //adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, ((NX * NY * sizeof(ATYPE))>>20) + 1L);
-        adios_set_max_buffer_size (((NX * NY * sizeof(ATYPE))>>20) + 1L);
+        adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, ((NX * NY * sizeof(ATYPE))>>20) + 1L);
+        //adios_set_max_buffer_size (((NX * NY * sizeof(ATYPE))>>20) + 1L);
 
         int64_t       m_adios_group;
         int64_t       m_adios_file;
