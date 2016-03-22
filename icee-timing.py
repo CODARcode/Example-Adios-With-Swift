@@ -39,6 +39,10 @@ def get_timinglines(fname):
     elap = np.zeros((nsteps,npe), dtype=np.float)
     stamp = np.zeros((nsteps,npe), dtype=np.float)
     thrp = np.zeros((nsteps,npe), dtype=np.float)
+    elap[:] = np.nan
+    stamp[:] = np.nan
+    thrp[:] = np.nan
+
     for line in selected:
         x = line.split()
         elap[int(x[2]), int(x[3])] = float(x[4])
@@ -84,34 +88,35 @@ if args.summary:
         for t in range(nsteps):
             print '%9d' % t, \
                 '%9.3f' % elap[t,0], \
-                '%9.3f' % np.mean(elap[t,:]), \
-                '%9.3f' % np.std(elap[t,:]), \
-                '%9.3f' % np.min(elap[t,:]), \
-                '%9.3f' % np.max(elap[t,:])
+                '%9.3f' % np.nanmean(elap[t,:]), \
+                '%9.3f' % np.nanstd(elap[t,:]), \
+                '%9.3f' % np.nanmin(elap[t,:]), \
+                '%9.3f' % np.nanmax(elap[t,:])
 
         print '%9s' % '---'
         print '%9s' % 'AVG', \
-            '%9.3f' % np.mean(elap[:,0]), \
-            '%9.3f' % np.mean(elap[:,:])
+            '%9.3f' % np.nanmean(elap[:,0]), \
+            '%9.3f' % np.nanmean(elap[:,:])
         print '%9s' % 'STD', \
-            '%9.3f' % np.std(elap[:,0]), \
-            '%9.3f' % np.std(elap[:,:])
+            '%9.3f' % np.nanstd(elap[:,0]), \
+            '%9.3f' % np.nanstd(elap[:,:])
     else:
         print '%7s' % 'SEQ', ' '.join(map(lambda x: '%7s' % ('#'+str(x)), range(nsteps))), \
             '%7s' % 'AVG', '%7s' % 'STD'
         print '%7s' % 'Time', ' '.join(map(lambda x: '%7.3f'%x, elap[:,0])), \
-            '%7.3f' % np.mean(elap[:,0]), '%7.3f' % np.std(elap[:,0])
-        print '%7s' % 'AVG', ' '.join(map(lambda x: '%7.3f'%x, np.mean(elap, 1))), \
-            '%7.3f' % np.mean(elap[:,:]), '%7.3f' % np.std(elap[:,:])
-        print '%7s' % 'STD', ' '.join(map(lambda x: '%7.3f'%x, np.std(elap, 1)))
-        print '%7s' % 'MIN', ' '.join(map(lambda x: '%7.3f'%x, np.min(elap, 1)))
-        print '%7s' % 'MAX', ' '.join(map(lambda x: '%7.3f'%x, np.max(elap, 1)))
+            '%7.3f' % np.nanmean(elap[:,0]), '%7.3f' % np.nanstd(elap[:,0])
+        print '%7s' % 'AVG', ' '.join(map(lambda x: '%7.3f'%x, np.nanmean(elap, 1))), \
+            '%7.3f' % np.nanmean(elap[:,:]), '%7.3f' % np.nanstd(elap[:,:])
+        print '%7s' % 'STD', ' '.join(map(lambda x: '%7.3f'%x, np.nanstd(elap, 1)))
+        print '%7s' % 'MIN', ' '.join(map(lambda x: '%7.3f'%x, np.nanmin(elap, 1)))
+        print '%7s' % 'MAX', ' '.join(map(lambda x: '%7.3f'%x, np.nanmax(elap, 1)))
 
 
 if args.save:
     import matplotlib as mpl
     import matplotlib.pyplot as plt
     from matplotlib.ticker import FormatStrFormatter
+    import matplotlib.mlab as mlab
     import os
 
     mpl.rcParams['figure.figsize'] = (5.0, 3.75) # Original: 8x6
@@ -127,14 +132,31 @@ if args.save:
         else:
             return s + '%'
 
+    def plot_hist(x):
+        f, (ax_box, ax_hist) = plt.subplots(2, sharex=True, \
+                                            gridspec_kw={"height_ratios": (.15, .85)})
+        bp = ax_box.boxplot(x, vert=False)
+        h = ax_hist.hist(x, bins=20, weights=np.ones_like(x)/x.size*100.)
+
+        ## confirm that the axes line up
+        xlims = np.array([ax_box.get_xlim(), ax_hist.get_xlim()])
+        for ax in [ax_box, ax_hist]:
+            ax.set_xlim([xlims.min(), xlims.max()])
+
+        ##ax_box.set_xticklabels([])  # clear out overlapping xlabels
+        ax_box.set_yticks([])  # don't need that 1 tick mark
+
+        f.subplots_adjust(hspace=0)
+        plt.setp([a.get_xticklabels() for a in f.axes[:-1]], visible=False)
+
     prefix = os.path.splitext(os.path.basename(args.logfile[0]))[0]
     if len(args.logfile) > 1:
-        prefix = prefix+'-multi'
+        prefix = '%s+%dmore'%(prefix, len(args.logfile)-1)
 
     plt.figure(1)
     p = plt.plot(elap)
     if ymin is not None:
-        plt.ylim((ymin ,plt.ylim()[1]))
+        plt.ylim((ymin, plt.ylim()[1]))
     plt.legend(p, range(elap.shape[1]), loc='center left', bbox_to_anchor=(1,.5), fontsize='small', title='Rank')
     plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
     plt.xlabel('Timestep')
@@ -143,7 +165,7 @@ if args.save:
     plt.figure(2)
     p = plt.plot(elap.T)
     if ymin is not None:
-        plt.ylim((ymin ,plt.ylim()[1]))
+        plt.ylim((ymin, plt.ylim()[1]))
     plt.legend(p, range(elap.shape[0]), loc='center left', bbox_to_anchor=(1,.5), fontsize='small', title='Timestep')
     plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
     plt.xlabel('Rank')
@@ -157,22 +179,31 @@ if args.save:
     plt.xlabel('Rank')
     plt.ylabel('Timeline (s)')
 
-    plt.figure(4)
+    fig = plt.figure(4)
     x = np.ravel(thrp)
-    plt.hist(x, bins=20, weights=np.ones_like(x)/x.size*100.)
+    x = x[~np.isnan(x)]
+    ax = fig.add_subplot(111)
+    #n, bins, patches = ax.hist(x, bins=20, weights=np.ones_like(x)/x.size*100.)
+    n, bins, patches = ax.hist(x, bins=20, normed=1)
+    bincenters = 0.5*(bins[1:]+bins[:-1])
+    #y = mlab.normpdf(bincenters, np.mean(x), np.std(x))*100.
+    y = mlab.normpdf(bincenters, np.mean(x), np.std(x))
+    l = ax.plot(bincenters, y, 'r--', linewidth=1)
+
     #formatter = FuncFormatter(to_percent)
     #plt.gca().yaxis.set_major_formatter(formatter)
-    plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
-    plt.xlabel('I/O Throughput (MiB/s)')
-    plt.ylabel('Frequency (%)')
+    #ax.yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
+    ax.set_xlabel('I/O Throughput (MiB/s)')
+    #ax.set_ylabel('Frequency (%)')
+    ax.set_ylabel('Probability')
     plt.savefig(prefix+'-fig4.pdf', bbox_inches='tight')
     plt.savefig(prefix+'-fig4.png', bbox_inches='tight')
 
     plt.figure(5)
-    plt.errorbar(np.arange(thrp.shape[0]), np.mean(thrp, 1), yerr=np.std(thrp, 1))
+    plt.errorbar(np.arange(thrp.shape[0]), np.nanmean(thrp, 1), yerr=np.nanstd(thrp, 1))
     if ymin is not None:
-        plt.ylim((ymin ,plt.ylim()[1]))
-    plt.xlim((plt.xlim()[0]-1 ,plt.xlim()[1]))
+        plt.ylim((ymin, plt.ylim()[1]))
+    plt.xlim((plt.xlim()[0]-1, plt.xlim()[1]))
     plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
     plt.xlabel('Timestep')
     plt.ylabel('I/O Throughput (MiB/s)')
