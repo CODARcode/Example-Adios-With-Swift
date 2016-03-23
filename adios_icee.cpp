@@ -223,26 +223,24 @@ int main (int argc, char ** argv)
             if (args_info.append_flag)
                 amode = (!it)? "w" : "a";
 
-            //MPI_Barrier(comm);
-            double t_start = MPI_Wtime();
-
+            double t1 = MPI_Wtime();
             adios_open (&m_adios_file, "restart", fname.c_str(), amode.c_str(), comm);
             adios_groupsize = 4 * 8 + NX * NY * sizeof(ATYPE);
             adios_group_size (m_adios_file, adios_groupsize, &adios_totalsize);
             //adios_set_max_buffer_size (adios_groupsize*size/1024L/1024L+1); // in MB
 
+            double t2 = MPI_Wtime();
             adios_write(m_adios_file, "NX", (void *) &NX);
             adios_write(m_adios_file, "NY", (void *) &NY);
             adios_write(m_adios_file, "G", (void *) &G);
             O = rank * NX;
             adios_write(m_adios_file, "O", (void *) &O);
             adios_write(m_adios_file, "temperature", t);
-
             adios_close (m_adios_file);
+            double t3 = MPI_Wtime();
 
-            //MPI_Barrier(comm);
-            double t_end = MPI_Wtime();
-            double t_elap = t_end - t_start;
+            double t_elap13 = t3-t1;
+            double t_elap23 = t3-t2;
 
             //ltime=time(NULL);
             //timetext = asctime(localtime(&ltime));
@@ -250,16 +248,16 @@ int main (int argc, char ** argv)
 
             if (it==0 && rank==0)
             {
-                printf("    %14s %5s %5s %9s %12s %12s\n", "timestep", "seq", "rank", "elap(sec)", "local(MiB/s)", "global(MiB/s)");
-                printf("    %14s %5s %5s %9s %12s %12s\n", "--------", "---", "----", "---------", "------------", "-------------");
+                printf("    %14s %5s %5s %9s %9s %9s %9s\n", "timestep",   "seq",  "rank",   "t1(sec)",   "(MiB/s)",   "t2(sec)",   "(MiB/s)");
+                printf("    %14s %5s %5s %9s %9s %9s %9s\n", "--------", "-----", "-----", "---------", "---------", "---------", "---------");
             }
             MPI_Barrier(comm);
             sleep_with_interval((double)interval_sec, 100);
 
-            printf(">>> %14.03f %5d %5d %9.03f %'12.03f %'12.03f\n",
-                   t_end, it, rank, t_elap,
-                   (double)adios_groupsize/t_elap/1024.0/1024.0,
-                   (double)adios_groupsize*size/t_elap/1024.0/1024.0);
+            printf(">>> %14.03f %5d %5d %9.03f %9.03f %9.03f %9.03f\n",
+                   t3, it, rank,
+                   t_elap13, (double)adios_groupsize/t_elap13/1024.0/1024.0,
+                   t_elap23, (double)adios_groupsize/t_elap23/1024.0/1024.0);
         }
 
         adios_finalize (rank);
@@ -329,8 +327,8 @@ int main (int argc, char ** argv)
 
             if (rank==0)
             {
-                printf("    %14s %5s %5s %9s %12s %12s %s\n", "timestep", "seq", "rank", "elap(sec)", "local(MiB/s)", "global(MiB/s)", "check");
-                printf("    %14s %5s %5s %9s %12s %12s %s\n", "--------", "---", "----", "---------", "------------", "-------------", "-----");
+                printf("    %14s %5s %5s %9s %9s %s\n", "timestep",   "seq",  "rank", "time(sec)",   "(MiB/s)", "check");
+                printf("    %14s %5s %5s %9s %9s %s\n", "--------", "-----", "-----", "---------", "---------", "-----");
             }
 
             /* Processing loop over the steps (we are already in the first one) */
@@ -360,10 +358,9 @@ int main (int argc, char ** argv)
                     sum += (double) data[i];
                 }
 
-                printf(">>> %14.03f %5d %5d %9.03f %'12.03f %'12.03f  %'.01f\n",
+                printf(">>> %14.03f %5d %5d %9.03f %9.03f %'.0f\n",
                        t_end, f->current_step, rank, t_elap,
                        (double)(count[0]*chunk_size)*sizeof(ATYPE)/t_elap/1024.0/1024.0,
-                       (double)(v->dims[0]*chunk_size)*sizeof(ATYPE)/t_elap/1024.0/1024.0,
                        sum);
 
                 if (it==nsteps-1) break;
