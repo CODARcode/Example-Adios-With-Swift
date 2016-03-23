@@ -236,11 +236,13 @@ int main (int argc, char ** argv)
             O = rank * NX;
             adios_write(m_adios_file, "O", (void *) &O);
             adios_write(m_adios_file, "temperature", t);
-            adios_close (m_adios_file);
             double t3 = MPI_Wtime();
+            adios_close (m_adios_file);
+            double t4 = MPI_Wtime();
 
-            double t_elap13 = t3-t1;
-            double t_elap23 = t3-t2;
+            double t_elap14 = t4-t1;
+            double t_elap24 = t4-t2;
+            double t_elap34 = t4-t3;
 
             //ltime=time(NULL);
             //timetext = asctime(localtime(&ltime));
@@ -248,16 +250,17 @@ int main (int argc, char ** argv)
 
             if (it==0 && rank==0)
             {
-                printf("    %14s %5s %5s %9s %9s %9s %9s\n", "timestep",   "seq",  "rank",   "t1(sec)",   "(MiB/s)",   "t2(sec)",   "(MiB/s)");
-                printf("    %14s %5s %5s %9s %9s %9s %9s\n", "--------", "-----", "-----", "---------", "---------", "---------", "---------");
+                printf("    %14s %5s %5s %9s %9s %9s %9s %9s %9s\n", "timestep",   "seq",  "rank",   "t1(sec)",   "(MiB/s)",   "t2(sec)",   "(MiB/s)",   "t3(sec)",   "(MiB/s)");
+                printf("    %14s %5s %5s %9s %9s %9s %9s %9s %9s\n", "--------", "-----", "-----", "---------", "---------", "---------", "---------", "---------", "---------");
             }
             MPI_Barrier(comm);
             sleep_with_interval((double)interval_sec, 100);
 
-            printf(">>> %14.03f %5d %5d %9.03e %9.03f %9.03e %9.03f\n",
+            printf(">>> %14.03f %5d %5d %9.03e %9.03f %9.03e %9.03f %9.03e %9.03f\n",
                    t3, it, rank,
-                   t_elap13, (double)adios_groupsize/t_elap13/1024.0/1024.0,
-                   t_elap23, (double)adios_groupsize/t_elap23/1024.0/1024.0);
+                   t_elap14, (double)adios_groupsize/t_elap14/1024.0/1024.0,
+                   t_elap24, (double)adios_groupsize/t_elap24/1024.0/1024.0,
+                   t_elap34, (double)adios_groupsize/t_elap34/1024.0/1024.0);
         }
 
         adios_finalize (rank);
