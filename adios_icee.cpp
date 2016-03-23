@@ -254,7 +254,7 @@ int main (int argc, char ** argv)
             MPI_Barrier(comm);
             sleep_with_interval((double)interval_sec, 100);
 
-            printf(">>> %14.03f %5d %5d %9.03f %9.03f %9.03f %9.03f\n",
+            printf(">>> %14.03f %5d %5d %9.03g %9.03f %9.03g %9.03f\n",
                    t3, it, rank,
                    t_elap13, (double)adios_groupsize/t_elap13/1024.0/1024.0,
                    t_elap23, (double)adios_groupsize/t_elap23/1024.0/1024.0);
@@ -358,7 +358,7 @@ int main (int argc, char ** argv)
                     sum += (double) data[i];
                 }
 
-                printf(">>> %14.03f %5d %5d %9.03f %9.03f %'.0f\n",
+                printf(">>> %14.03f %5d %5d %9.03g %9.03f %'.0f\n",
                        t_end, f->current_step, rank, t_elap,
                        (double)(count[0]*chunk_size)*sizeof(ATYPE)/t_elap/1024.0/1024.0,
                        sum);
