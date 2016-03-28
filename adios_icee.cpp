@@ -33,6 +33,12 @@ using namespace std;
 #define ADIOS_ATYPE adios_double
 #endif
 
+#ifndef VERSION
+#define VERSIOn NA
+#endif
+#define xstr(s) stringfy(s)
+#define stringfy(s) #s
+
 #include <sys/time.h>
 struct timeval adios_timer_tp;
 double adios_gettime()
@@ -70,7 +76,13 @@ int main (int argc, char ** argv)
     struct icee_args_info args_info;
 
     if (icee_cmdline_parser (argc, argv, &args_info) != 0)
-        exit(1) ;
+        exit(1);
+
+    if (args_info.version_given)
+    {
+        printf("%s (version: %s)\n", argv[0], xstr(VERSION));
+        exit(1);
+    }
 
     string adios_write_method = "POSIX1";
     enum ADIOS_READ_METHOD adios_read_method = ADIOS_READ_METHOD_BP;

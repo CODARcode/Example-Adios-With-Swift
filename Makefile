@@ -1,6 +1,6 @@
 CC = mpicc
 CXX = mpicxx
-CFLAGS = -g
+CFLAGS = -g -DVERSION=$(shell git describe --abbrev=4 --dirty --always --tags)
 
 ADIOS_INC = $(shell adios_config -c)
 ADIOS_LIB = $(shell adios_config -l)
@@ -28,7 +28,7 @@ adios_icee: adios_icee.o icee_cmdline.o
 	$(CXX) $(CFLAGS) $(ADIOS_INC) -o $@ $^ $(ADIOS_LIB)
 
 ggo: 
-	gengetopt --input=icee_cmdline.ggo
+	gengetopt --input=icee_cmdline.ggo --no-handle-version
 
 clean:
 	rm -f *.o *.*~ adios_write adios_read adios_icee
