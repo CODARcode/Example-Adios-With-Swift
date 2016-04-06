@@ -13,16 +13,19 @@ parser.add_argument('--step', help='timestep', type=int, default=0)
 parser.add_argument('--rank', help='rank', type=int, default=0)
 parser.add_argument('--ymin', help='ymin', type=float)
 parser.add_argument('--display', help='xwin display', action='store_true', default=False)
-parser.add_argument('--save', help='save images', action='store_true', default=True)
-parser.add_argument('--summary', help='print summary', action='store_true', default=True)
+parser.add_argument('--nosave', help='no image save', action='store_true', default=False)
+parser.add_argument('--nosummary', help='no summary print', action='store_true', default=False)
 parser.add_argument('--byrow', help='print summary by rows', action='store_true', default=False)
+parser.add_argument('--prefix', help='prefix')
+parser.add_argument('--timeindex', help='timeindex', type=int, default=4)
+parser.add_argument('--outformat', help='image output format (e.g., "pdf", "pdf,png")', default='pdf')
 args = parser.parse_args()
 
 ymin = None if args.ymin is None else args.ymin
 tid = args.step
 pid = args.rank
 
-def get_timinglines(fname):
+def get_timinglines(fname, tindex=4):
     selected = []
     npe = 0
     nsteps = 0
@@ -45,9 +48,9 @@ def get_timinglines(fname):
 
     for line in selected:
         x = line.split()
-        elap[int(x[2]), int(x[3])] = float(x[4])
         stamp[int(x[2]), int(x[3])] = float(x[1])
-        thrp[int(x[2]), int(x[3])] = locale.atof(x[5]) ##local:5, global:6
+        elap[int(x[2]), int(x[3])] = float(x[tindex]) ## t14(4), t24(6), t34(8)
+        thrp[int(x[2]), int(x[3])] = locale.atof(x[tindex+1])
 
     return elap, stamp, thrp
 
@@ -69,9 +72,9 @@ def print_summary(fname):
 for logfile in args.logfile:
     print_summary(logfile)
 
-elap, stamp, thrp = get_timinglines(args.logfile[0])
+elap, stamp, thrp = get_timinglines(args.logfile[0], args.timeindex)
 for logfile in args.logfile[1:]:
-    elap_, stamp_, thrp_ = get_timinglines(logfile)
+    elap_, stamp_, thrp_ = get_timinglines(logfile, args.timeindex)
     elap = np.concatenate((elap, elap_), 1)
     stamp = np.concatenate((stamp, stamp_), 1)
     thrp = np.concatenate((thrp, thrp_), 1)
@@ -81,7 +84,7 @@ if args.filter is not None:
     stamp = eval('stamp[%s]' % args.filter)
     thrp = eval('thrp[%s]' % args.filter)
 
-if args.summary:
+if not args.nosummary:
     nsteps = elap.shape[0]
     if args.byrow:
         print '%9s %9s %9s %9s %9s %9s' % ('SEQ', 'Time(s)', 'AVG', 'STD', 'MIN', 'MAX')
@@ -112,7 +115,7 @@ if args.summary:
         print '%7s' % 'MAX', ' '.join(map(lambda x: '%7.3f'%x, np.nanmax(elap, 1)))
 
 
-if args.save:
+if not args.nosave:
     import matplotlib as mpl
     import matplotlib.pyplot as plt
     from matplotlib.ticker import FormatStrFormatter
@@ -157,6 +160,9 @@ if args.save:
     if len(args.logfile) > 1:
         prefix = '%s+%dmore'%(prefix, len(args.logfile)-1)
 
+    if args.prefix is not None:
+        prefix = args.prefix
+
     plt.figure(1)
     p = plt.plot(elap)
     if ymin is not None:
@@ -184,31 +190,43 @@ if args.save:
     plt.ylabel('Timeline (s)')
 
     fig = plt.figure(4)
-    x = np.ravel(thrp)
-    #x = np.ravel(elap)
+    ##x = np.ravel(thrp)
+    x = np.ravel(elap)
     x = x[~np.isnan(x)]
     x = reject_outliers(x, m=3)
-    #n, bins, patches = ax.hist(x, bins=20, weights=np.ones_like(x)/x.size*100.)
-    n, bins, patches = plt.hist(x, bins=20, normed=1)
+    n, bins, patches = plt.hist(x, bins=20, weights=np.ones_like(x)/x.size)
+    ##n, bins, patches = plt.hist(x, bins=20, normed=1) # will satisfy np.sum(n*np.diff(bins)) == 1.0
     bincenters = 0.5*(bins[1:]+bins[:-1])
-    #y = mlab.normpdf(bincenters, np.mean(x), np.std(x))*100.
-    y = mlab.normpdf(bincenters, np.mean(x), np.std(x, ddof=1))
-    l = plt.plot(bincenters, y, 'r--', linewidth=2)
 
-    formatter = ticker.ScalarFormatter(useMathText=True)
+    mu = np.mean(x)
+    sigma = np.std(x, ddof=1)
+    cv = sigma/mu
+    y = mlab.normpdf(bincenters, mu, sigma) * np.diff(bins)
+    l = plt.plot(bincenters, y, 'r--', linewidth=2)
+    # from matplotlib.patches import Rectangle
+    # extra = Rectangle((0, 0), 1, 1, fc="w", fill=False, edgecolor='none', linewidth=0)
+    # plt.legend([extra, extra], \
+    #             [r'$\mu$=%.2f'%mu, r'$\sigma$=%.2f'%sigma], \
+    #             frameon=False, fontsize='small')
+
+    formatter = ticker.ScalarFormatter(useMathText=True, useOffset=False)
     formatter.set_scientific(True)
-    formatter.set_powerlimits((-1,1))
+    formatter.set_powerlimits((0,0))
     plt.gca().yaxis.set_major_formatter(formatter)
+    #plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
 
     #formatter = FuncFormatter(to_percent)
     #plt.gca().yaxis.set_major_formatter(formatter)
-    #ax.yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
     #plt.ylabel('Frequency (%)')
-    plt.xlabel('I/O Throughput (MiB/s)')
+    ##plt.xlabel('I/O Throughput (MiB/s)')
+    plt.xlabel('I/O Time (seconds)')
     plt.ylabel('Probability')
+    #plt.yscale('log', nonposy='clip')
     #plt.grid(True)
-    plt.savefig(prefix+'-fig4.pdf', bbox_inches='tight')
-    plt.savefig(prefix+'-fig4.png', bbox_inches='tight')
+    for ext in args.outformat.strip().split(','):
+        outname = prefix+'-fig4.' + ext
+        print 'Saving ... ', outname
+        plt.savefig(outname, bbox_inches='tight')
 
     plt.figure(5)
     plt.errorbar(np.arange(thrp.shape[0]), np.nanmean(thrp, 1), yerr=np.nanstd(thrp, 1, ddof=1))
@@ -218,7 +236,9 @@ if args.save:
     plt.gca().yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
     plt.xlabel('Timestep')
     plt.ylabel('I/O Throughput (MiB/s)')
-    plt.savefig(prefix+'-fig5.pdf', bbox_inches='tight')
-    plt.savefig(prefix+'-fig5.png', bbox_inches='tight')
+    for ext in args.outformat.strip().split(','):
+        outname = prefix+'-fig5.' + ext
+        print 'Saving ... ', outname
+        plt.savefig(outname, bbox_inches='tight')
 
     if args.display: plt.show()
