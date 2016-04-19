@@ -235,6 +235,7 @@ int main (int argc, char ** argv)
             if (args_info.append_flag)
                 amode = (!it)? "w" : "a";
 
+            MPI_Barrier(comm);
             double t1 = MPI_Wtime();
             adios_open (&m_adios_file, "restart", fname.c_str(), amode.c_str(), comm);
             adios_groupsize = 4 * 8 + NX * NY * sizeof(ATYPE);
