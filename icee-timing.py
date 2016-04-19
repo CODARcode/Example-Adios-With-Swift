@@ -73,8 +73,14 @@ for logfile in args.logfile:
     print_summary(logfile)
 
 elap, stamp, thrp = get_timinglines(args.logfile[0], args.timeindex)
+print elap.shape
 for logfile in args.logfile[1:]:
     elap_, stamp_, thrp_ = get_timinglines(logfile, args.timeindex)
+    print elap_.shape
+    if elap.shape[0] > elap_.shape[0]:
+        elap = elap[:elap_.shape[0],:]
+        stamp = stamp[:elap_.shape[0],:]
+        thrp = thrp[:elap_.shape[0],:]
     elap = np.concatenate((elap, elap_), 1)
     stamp = np.concatenate((stamp, stamp_), 1)
     thrp = np.concatenate((thrp, thrp_), 1)

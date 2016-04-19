@@ -7,7 +7,10 @@ PROJECT (test-adios-icee)
 set(ADIOS_USE_MPI TRUE)
 find_package (ADIOS REQUIRED)
 add_definitions (${ADIOS_COMPILE_FLAGS})
-include_directories (${ADIOS_INCLUDE_PATH})
+include_directories (${ADIOS_INCLUDE_DIRS})
+message("ADIOS_INCLUDE_DIRS=${ADIOS_INCLUDE_DIRS}")
+message("ADIOS_LIBRARIES=${ADIOS_LIBRARIES}")
+
 
 find_package (MPI REQUIRED)
 include_directories (${MPI_CXX_INCLUDE_PATH})
