@@ -23,6 +23,7 @@
 #include <sstream>
 #include <time.h>
 #include <sys/resource.h>
+#include "filelock.h"
 
 using namespace std;
 
@@ -113,12 +114,19 @@ int main (int argc, char ** argv)
     }
 
 
+    int         world_rank, world_size;
     int         rank, size;
-    MPI_Comm    comm = MPI_COMM_WORLD;
+    MPI_Comm    comm;
 
     MPI_Init(&argc, &argv);
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+
+    MPI_Comm_split(MPI_COMM_WORLD, args_info.mpicolor_arg, world_rank, &comm);
+    MPI_Comm_rank(comm, &rank);
+    MPI_Comm_size(comm, &size);
+
+    printf("world size, rank=%d, %d, comm size, rank = %d, %d\n", world_size, world_rank, size, rank);
 
     typedef enum {SERVER, CLIENT} mode_t;
     mode_t mode = SERVER;
@@ -169,7 +177,10 @@ int main (int argc, char ** argv)
     }
 
     setlocale(LC_NUMERIC, "en_US.UTF-8");
+
     string fname = "icee.bp";
+    if (args_info.outfile_given)
+        fname = string(args_info.outfile_arg);
     if (prefix.length() > 0)
         fname = prefix + "/" + fname;
 
@@ -235,7 +246,7 @@ int main (int argc, char ** argv)
             if (args_info.append_flag)
                 amode = (!it)? "w" : "a";
 
-            MPI_Barrier(comm);
+            MPI_Barrier(MPI_COMM_WORLD);
             double t1 = MPI_Wtime();
             adios_open (&m_adios_file, "restart", fname.c_str(), amode.c_str(), comm);
             adios_groupsize = 4 * 8 + NX * NY * sizeof(ATYPE);

@@ -15,6 +15,8 @@ option "nsteps" - "number of time steps" int optional default="10"
 option "params" - "method params" string optional default=""
 option "prefix" - "prefix" string optional default=""
 option "append" - "append" flag off
+option "outfile" - "outfile" string optional
+option "mpicolor" - "MPI comm color" int optional default="0"
 
 option "host" - "local hostname" string optional default="localhost"
 option "port" p "local port" int optional default="59900"

@@ -78,6 +78,12 @@ struct icee_args_info
   const char *prefix_help; /**< @brief prefix help description.  */
   int append_flag;	/**< @brief append (default=off).  */
   const char *append_help; /**< @brief append help description.  */
+  char * outfile_arg;	/**< @brief outfile.  */
+  char * outfile_orig;	/**< @brief outfile original value given at command line.  */
+  const char *outfile_help; /**< @brief outfile help description.  */
+  int mpicolor_arg;	/**< @brief MPI comm color (default='0').  */
+  char * mpicolor_orig;	/**< @brief MPI comm color original value given at command line.  */
+  const char *mpicolor_help; /**< @brief MPI comm color help description.  */
   char * host_arg;	/**< @brief local hostname (default='localhost').  */
   char * host_orig;	/**< @brief local hostname original value given at command line.  */
   const char *host_help; /**< @brief local hostname help description.  */
@@ -126,6 +132,8 @@ struct icee_args_info
   unsigned int params_given ;	/**< @brief Whether params was given.  */
   unsigned int prefix_given ;	/**< @brief Whether prefix was given.  */
   unsigned int append_given ;	/**< @brief Whether append was given.  */
+  unsigned int outfile_given ;	/**< @brief Whether outfile was given.  */
+  unsigned int mpicolor_given ;	/**< @brief Whether mpicolor was given.  */
   unsigned int host_given ;	/**< @brief Whether host was given.  */
   unsigned int port_given ;	/**< @brief Whether port was given.  */
   unsigned int remotehost_given ;	/**< @brief Whether remotehost was given.  */
