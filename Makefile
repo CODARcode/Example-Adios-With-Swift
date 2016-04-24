@@ -18,13 +18,13 @@ all: adios_icee
 .cpp.o:
 	$(CXX) $(CFLAGS) $(INCS) -c $<
 
-adios_write: adios_write.cpp
+adios_write: adios_write.cpp 
 	$(CXX) $(CFLAGS) $(ADIOS_INC) -o $@ $^ $(ADIOS_LIB)
 
 adios_read: adios_read.cpp icee_cmdline.c
 	$(CXX) $(CFLAGS) $(ADIOS_INC) -o $@ $^ $(ADIOS_LIB)
 
-adios_icee: adios_icee.o icee_cmdline.o
+adios_icee: adios_icee.o icee_cmdline.o filelock.o
 	$(CXX) $(CFLAGS) $(ADIOS_INC) -o $@ $^ $(ADIOS_LIB)
 
 ggo: 

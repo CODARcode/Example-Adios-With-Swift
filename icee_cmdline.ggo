@@ -11,12 +11,13 @@ option "len" n "array length" longlong optional default="1"
 option "chunk" - "chunk length" longlong optional default="131072"
 option "timeout" - "Timeout" float optional default="10.0"
 option "sleep" - "interval time" int optional default="5"
-option "nsteps" - "number of time steps" int optional default="10"
-option "params" - "method params" string optional default=""
+option "nstep" - "number of time steps" int optional default="10"
+option "param" - "method params" string optional default=""
 option "prefix" - "prefix" string optional default=""
 option "append" - "append" flag off
 option "outfile" - "outfile" string optional
 option "mpicolor" - "MPI comm color" int optional default="0"
+option "filelock" - "filelock name" string optional multiple(2) 
 
 option "host" - "local hostname" string optional default="localhost"
 option "port" p "local port" int optional default="59900"

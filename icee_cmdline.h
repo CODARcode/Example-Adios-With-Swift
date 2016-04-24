@@ -67,12 +67,12 @@ struct icee_args_info
   int sleep_arg;	/**< @brief interval time (default='5').  */
   char * sleep_orig;	/**< @brief interval time original value given at command line.  */
   const char *sleep_help; /**< @brief interval time help description.  */
-  int nsteps_arg;	/**< @brief number of time steps (default='10').  */
-  char * nsteps_orig;	/**< @brief number of time steps original value given at command line.  */
-  const char *nsteps_help; /**< @brief number of time steps help description.  */
-  char * params_arg;	/**< @brief method params (default='').  */
-  char * params_orig;	/**< @brief method params original value given at command line.  */
-  const char *params_help; /**< @brief method params help description.  */
+  int nstep_arg;	/**< @brief number of time steps (default='10').  */
+  char * nstep_orig;	/**< @brief number of time steps original value given at command line.  */
+  const char *nstep_help; /**< @brief number of time steps help description.  */
+  char * param_arg;	/**< @brief method params (default='').  */
+  char * param_orig;	/**< @brief method params original value given at command line.  */
+  const char *param_help; /**< @brief method params help description.  */
   char * prefix_arg;	/**< @brief prefix (default='').  */
   char * prefix_orig;	/**< @brief prefix original value given at command line.  */
   const char *prefix_help; /**< @brief prefix help description.  */
@@ -84,6 +84,11 @@ struct icee_args_info
   int mpicolor_arg;	/**< @brief MPI comm color (default='0').  */
   char * mpicolor_orig;	/**< @brief MPI comm color original value given at command line.  */
   const char *mpicolor_help; /**< @brief MPI comm color help description.  */
+  char ** filelock_arg;	/**< @brief filelock name.  */
+  char ** filelock_orig;	/**< @brief filelock name original value given at command line.  */
+  unsigned int filelock_min; /**< @brief filelock name's minimum occurreces */
+  unsigned int filelock_max; /**< @brief filelock name's maximum occurreces */
+  const char *filelock_help; /**< @brief filelock name help description.  */
   char * host_arg;	/**< @brief local hostname (default='localhost').  */
   char * host_orig;	/**< @brief local hostname original value given at command line.  */
   const char *host_help; /**< @brief local hostname help description.  */
@@ -128,12 +133,13 @@ struct icee_args_info
   unsigned int chunk_given ;	/**< @brief Whether chunk was given.  */
   unsigned int timeout_given ;	/**< @brief Whether timeout was given.  */
   unsigned int sleep_given ;	/**< @brief Whether sleep was given.  */
-  unsigned int nsteps_given ;	/**< @brief Whether nsteps was given.  */
-  unsigned int params_given ;	/**< @brief Whether params was given.  */
+  unsigned int nstep_given ;	/**< @brief Whether nstep was given.  */
+  unsigned int param_given ;	/**< @brief Whether param was given.  */
   unsigned int prefix_given ;	/**< @brief Whether prefix was given.  */
   unsigned int append_given ;	/**< @brief Whether append was given.  */
   unsigned int outfile_given ;	/**< @brief Whether outfile was given.  */
   unsigned int mpicolor_given ;	/**< @brief Whether mpicolor was given.  */
+  unsigned int filelock_given ;	/**< @brief Whether filelock was given.  */
   unsigned int host_given ;	/**< @brief Whether host was given.  */
   unsigned int port_given ;	/**< @brief Whether port was given.  */
   unsigned int remotehost_given ;	/**< @brief Whether remotehost was given.  */

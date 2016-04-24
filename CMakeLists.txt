@@ -18,6 +18,7 @@ include_directories (${MPI_CXX_INCLUDE_PATH})
 add_executable (adios_icee
   adios_icee.cpp
   icee_cmdline.c
+  filelock.c
   ${HEADER_FILES})
 target_link_libraries (adios_icee
   ${ADIOS_LIBRARIES}

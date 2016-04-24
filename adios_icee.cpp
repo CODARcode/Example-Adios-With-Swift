@@ -70,6 +70,72 @@ void sleep_with_interval (double timeout_sec, int interval_ms)
     //printf("Spent: %g (sec)\n", elapsed_time);
 }
 
+void do_define(const char* adios_write_method, const char* initstr)
+{
+    int64_t       m_adios_group;
+    
+    // adios_flag_no to turn off statics
+    //adios_declare_group (&m_adios_group, "restart", "", adios_flag_no);
+    adios_declare_group (&m_adios_group, "restart", "", adios_flag_yes);
+    adios_select_method (m_adios_group, adios_write_method, initstr, "");
+    
+    adios_define_var (m_adios_group, "NX"
+                      ,"", adios_long
+                      ,0, 0, 0);
+    
+    adios_define_var (m_adios_group, "NY"
+                      ,"", adios_long
+                      ,0, 0, 0);
+    
+    adios_define_var (m_adios_group, "G"
+                      ,"", adios_long
+                      ,0, 0, 0);
+    
+    adios_define_var (m_adios_group, "O"
+                      ,"", adios_long
+                      ,0, 0, 0);
+    
+    adios_define_var (m_adios_group, "temperature"
+                      ,"", ADIOS_ATYPE
+                      ,"NX,NY", "G,NY", "O,0");
+}
+
+void do_write(const char* fname, const char* amode,
+           uint64_t NX, uint64_t NY, const ATYPE *t,
+           uint64_t G, uint64_t O,
+           MPI_Comm comm,
+           uint64_t *groupsize, double *t0, double *elap)
+{
+    int64_t     m_adios_file;
+    uint64_t    adios_groupsize, adios_totalsize;
+
+    double t1 = MPI_Wtime();
+    adios_open (&m_adios_file, "restart", fname, amode, comm);
+    adios_groupsize = 4 * 8 + NX * NY * sizeof(ATYPE);
+    adios_group_size (m_adios_file, adios_groupsize, &adios_totalsize);
+    //adios_set_max_buffer_size (adios_groupsize*size/1024L/1024L+1); // in MB
+    
+    double t2 = MPI_Wtime();
+    adios_write(m_adios_file, "NX", (void *) &NX);
+    adios_write(m_adios_file, "NY", (void *) &NY);
+    adios_write(m_adios_file, "G", (void *) &G);
+    adios_write(m_adios_file, "O", (void *) &O);
+    adios_write(m_adios_file, "temperature", t);
+    double t3 = MPI_Wtime();
+    adios_close (m_adios_file);
+    double t4 = MPI_Wtime();
+    
+    //double t_elap14 = t4-t1;
+    //double t_elap24 = t4-t2;
+    //double t_elap34 = t4-t3;
+    elap[0] = t4-t1;
+    elap[1] = t4-t2;
+    elap[2] = t4-t3;
+    
+    *groupsize = adios_groupsize;
+    *t0 = t1;
+}
+
 int main (int argc, char ** argv)
 {
     setlinebuf(stdout);
@@ -93,7 +159,7 @@ int main (int argc, char ** argv)
 
     float timeout_sec = args_info.timeout_arg;
     int   interval_sec = args_info.sleep_arg;
-    int   nsteps = args_info.nsteps_arg;
+    int   nstep = args_info.nstep_arg;
 
     if (args_info.writemethod_given)
         adios_write_method = string(args_info.writemethod_arg);
@@ -111,6 +177,16 @@ int main (int argc, char ** argv)
         } else {
             fprintf(stderr, "No read method: %s\n", optarg);
         }
+    }
+
+    int use_lock = 0;
+    if (args_info.filelock_given)
+        use_lock = 1;
+
+    string lock[] = {"lock1.lck", "lock2.lck"};
+    for (int i = 0; i < args_info.filelock_given; ++i)
+    {
+        lock[i] = string(args_info.filelock_arg[i]);
     }
 
 
@@ -138,7 +214,7 @@ int main (int argc, char ** argv)
     if (args_info.client_flag)
         mode = CLIENT;
 
-    string initstr = string(args_info.params_arg);
+    string initstr = string(args_info.param_arg);
     string prefix = string(args_info.prefix_arg);
 
     if (adios_write_method == "ICEE")
@@ -183,22 +259,27 @@ int main (int argc, char ** argv)
         fname = string(args_info.outfile_arg);
     if (prefix.length() > 0)
         fname = prefix + "/" + fname;
+    string fname_save = "icee_out.bp";
+    
+    adios_init_noxml (comm);
+    do_define(adios_write_method.c_str(), initstr.c_str());
+    
+    uint64_t adios_groupsize;//, adios_totalsize;
+    uint64_t G, O;
+    string   amode = "w";
 
     if (mode == SERVER)
     {
-        uint64_t    G, O;
         ATYPE        *t = (ATYPE *) malloc(NX * NY * sizeof(ATYPE));
         assert(t != NULL);
-        uint64_t    adios_groupsize, adios_totalsize;
 
-        adios_init_noxml (comm);
         adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, ((NX * NY * sizeof(ATYPE))>>20) + 1L);
         //adios_set_max_buffer_size (((NX * NY * sizeof(ATYPE))>>20) + 1L);
 
-        int64_t       m_adios_group;
-        int64_t       m_adios_file;
-        string amode = "w";
+        //int64_t       m_adios_group;
+        //int64_t       m_adios_file;
 
+        /*
         adios_declare_group (&m_adios_group, "restart", "", adios_flag_no);
         adios_select_method (m_adios_group, adios_write_method.c_str(), initstr.c_str(), "");
 
@@ -221,8 +302,10 @@ int main (int argc, char ** argv)
         adios_define_var (m_adios_group, "temperature"
                           ,"", ADIOS_ATYPE
                           ,"NX,NY", "G,NY", "O,0");
+         */
 
         G = NX * size;
+        O = rank * NX;
 
         if (rank==0)
         {
@@ -234,19 +317,28 @@ int main (int argc, char ** argv)
             printf("%10s : %'llu x %'llu\n", "Local dims", NX, NY);
             printf("%10s : %'.02f (MiB/proc)\n", "Data/PE", NX*NY*sizeof(ATYPE)/1024.0/1024.0);
             printf("%10s : %'.02f (MiB)\n", "Total", G*NY*sizeof(ATYPE)/1024.0/1024.0);
-            printf("%10s : %'d\n", "Steps", nsteps);
+            printf("%10s : %'d\n", "Steps", nstep);
             printf("===================\n\n");
         }
 
-        for (int it =0; it < nsteps; it++)
+        for (int it =0; it < nstep; it++)
         {
             for (uint64_t i = 0; i < NX*NY; i++)
                 t[i] = rank + it + 1.0;
 
             if (args_info.append_flag)
-                amode = (!it)? "w" : "a";
+                amode = (it==0)? "w" : "a";
 
+            if (use_lock && (rank == 0))
+            {
+                lockup(lock[0].c_str());
+                lockdown(lock[1].c_str());
+            }
+
+            double t0, t_elap[3];
             MPI_Barrier(MPI_COMM_WORLD);
+            do_write(fname.c_str(), amode.c_str(), NX, NY, t, G, O, comm, &adios_groupsize, &t0, t_elap);
+            /*
             double t1 = MPI_Wtime();
             adios_open (&m_adios_file, "restart", fname.c_str(), amode.c_str(), comm);
             adios_groupsize = 4 * 8 + NX * NY * sizeof(ATYPE);
@@ -267,7 +359,8 @@ int main (int argc, char ** argv)
             double t_elap14 = t4-t1;
             double t_elap24 = t4-t2;
             double t_elap34 = t4-t3;
-
+             */
+            
             //ltime=time(NULL);
             //timetext = asctime(localtime(&ltime));
             //timetext[24] = '\0';
@@ -281,10 +374,10 @@ int main (int argc, char ** argv)
             sleep_with_interval((double)interval_sec, 100);
 
             printf(">>> %14.03f %5d %5d %9.03e %9.03f %9.03e %9.03f %9.03e %9.03f\n",
-                   t3, it, rank,
-                   t_elap14, (double)adios_groupsize/t_elap14/1024.0/1024.0,
-                   t_elap24, (double)adios_groupsize/t_elap24/1024.0/1024.0,
-                   t_elap34, (double)adios_groupsize/t_elap34/1024.0/1024.0);
+                   t0, it, rank,
+                   t_elap[0], (double)adios_groupsize/t_elap[0]/1024.0/1024.0,
+                   t_elap[1], (double)adios_groupsize/t_elap[1]/1024.0/1024.0,
+                   t_elap[2], (double)adios_groupsize/t_elap[2]/1024.0/1024.0);
         }
 
         adios_finalize (rank);
@@ -320,23 +413,27 @@ int main (int argc, char ** argv)
         }
         else
         {
-            /* process file here... */
+            // Recover G from the metadata and compute NX and NY
             v = adios_inq_var (f, "temperature");
 
-            uint64_t slice_size = v->dims[0]/size;
-            uint64_t chunk_size = v->dims[1];
+            G = v->dims[0];
+            NX = G/size;
+            NY = v->dims[1];
+            O = rank * NX;
 
-            start[0] = rank * slice_size;
-            count[0] = slice_size;
+            start[0] = rank * NX;
+            count[0] = NX;
             start[1] = 0;
-            count[1] = chunk_size;
+            count[1] = NY;
 
             if (rank == size-1)
             {
-                slice_size = v->dims[0] - rank * slice_size;
-                count[0] = slice_size;
+                NX = G - rank * NX;
+                count[0] = NX;
             }
 
+            adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, ((NX * NY * sizeof(ATYPE))>>20) + 1L);
+            
             if (rank==0)
             {
                 printf("===== SUMMARY =====\n");
@@ -344,27 +441,29 @@ int main (int argc, char ** argv)
                 printf("%10s : %s\n", "Params", initstr.c_str());
                 printf("%10s : %'d (seconds)\n", "Interval", interval_sec);
                 printf("%10s : %'d\n", "PEs", size);
-                printf("%10s : %'llu x %'llu\n", "Global dims", v->dims[0], v->dims[1]);
-                printf("%10s : %'d\n", "Steps", nsteps);
+                printf("%10s : %'llu x %'llu\n", "Gl. dims", G, NY);
+                printf("%10s : %'d\n", "Steps", nstep);
+                printf("%10s : %s\n", "WMethod", adios_write_method.c_str());
+                printf("%10s : %s\n", "WParams", initstr.c_str());
                 printf("===================\n\n");
             }
 
-            data = (ATYPE *) malloc (slice_size * chunk_size * sizeof(ATYPE));
+            data = (ATYPE *) malloc (NX * NY * sizeof(ATYPE));
             assert(data != NULL);
 
             if (rank==0)
             {
-                printf("    %14s %5s %5s %9s %9s %s\n", "timestep",   "seq",  "rank", "time(sec)",   "(MiB/s)", "check");
-                printf("    %14s %5s %5s %9s %9s %s\n", "--------", "-----", "-----", "---------", "---------", "-----");
+                printf("%3s %14s %5s %5s %9s %9s %s\n", "+++", "timestep",   "seq",  "rank", "time(sec)",   "(MiB/s)", "check");
+                printf("%3s %14s %5s %5s %9s %9s %s\n", "+++", "--------", "-----", "-----", "---------", "---------", "-----");
             }
 
             /* Processing loop over the steps (we are already in the first one) */
             //while (adios_errno != err_end_of_stream) {
-            for (int it =0; it < nsteps; it++)
+            for (int it =0; it < nstep; it++)
             {
 
                 //MPI_Barrier(comm);
-                double t_start = MPI_Wtime();
+                double t0 = MPI_Wtime();
 
                 sel = adios_selection_boundingbox (v->ndim, start, count);
                 adios_schedule_read_byid (f, sel, v->varid, 0, 1, data);
@@ -372,25 +471,51 @@ int main (int argc, char ** argv)
                 adios_release_step (f);
 
                 //MPI_Barrier(comm);
-                double t_end = MPI_Wtime();
-                double t_elap = t_end - t_start;
+                double t1 = MPI_Wtime();
+                double t10 = t1 - t0;
 
                 //ltime=time(NULL);
                 //timetext = asctime(localtime(&ltime));
                 //timetext[24] = '\0';
 
                 double sum = 0.0;
-                for (uint64_t i = 0; i < slice_size * chunk_size; i++)
+                for (uint64_t i = 0; i < NX * NY; i++)
                 {
                     sum += (double) data[i];
                 }
 
-                printf(">>> %14.03f %5d %5d %9.03e %9.03f %'.0f\n",
-                       t_end, f->current_step, rank, t_elap,
-                       (double)(count[0]*chunk_size)*sizeof(ATYPE)/t_elap/1024.0/1024.0,
+                printf("+++ %14.03f %5d %5d %9.03e %9.03f %'.0f\n",
+                       t0, f->current_step, rank, t10,
+                       (double)(NX*NY)*sizeof(ATYPE)/t10/1024.0/1024.0,
                        sum);
+                
+                // Save what is read
+                if (args_info.append_flag)
+                    amode = (it==0)? "w" : "a";
+                
+                if (use_lock && (rank == 0))
+                {
+                    lockup(lock[0].c_str());
+                    lockdown(lock[1].c_str());
+                }
+                
+                double t_elap[3];
+                MPI_Barrier(MPI_COMM_WORLD);
+                do_write(fname_save.c_str(), amode.c_str(), NX, NY, data, G, O, comm, &adios_groupsize, &t0, t_elap);
 
-                if (it==nsteps-1) break;
+                if (it==0 && rank==0)
+                {
+                    printf("    %14s %5s %5s %9s %9s %9s %9s %9s %9s\n", "timestep",   "seq",  "rank",   "t1(sec)",   "(MiB/s)",   "t2(sec)",   "(MiB/s)",   "t3(sec)",   "(MiB/s)");
+                    printf("    %14s %5s %5s %9s %9s %9s %9s %9s %9s\n", "--------", "-----", "-----", "---------", "---------", "---------", "---------", "---------", "---------");
+                }
+                
+                printf(">>> %14.03f %5d %5d %9.03e %9.03f %9.03e %9.03f %9.03e %9.03f\n",
+                       t0, it, rank,
+                       t_elap[0], (double)adios_groupsize/t_elap[0]/1024.0/1024.0,
+                       t_elap[1], (double)adios_groupsize/t_elap[1]/1024.0/1024.0,
+                       t_elap[2], (double)adios_groupsize/t_elap[2]/1024.0/1024.0);
+                
+                if (it==nstep-1) break;
 
                 sleep_with_interval((double)interval_sec, 100);
 

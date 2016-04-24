@@ -41,12 +41,13 @@ const char *icee_args_info_help[] = {
   "      --chunk=LONGLONG      chunk length  (default=`131072')",
   "      --timeout=FLOAT       Timeout  (default=`10.0')",
   "      --sleep=INT           interval time  (default=`5')",
-  "      --nsteps=INT          number of time steps  (default=`10')",
-  "      --params=STRING       method params  (default=`')",
+  "      --nstep=INT           number of time steps  (default=`10')",
+  "      --param=STRING        method params  (default=`')",
   "      --prefix=STRING       prefix  (default=`')",
   "      --append              append  (default=off)",
   "      --outfile=STRING      outfile",
   "      --mpicolor=INT        MPI comm color  (default=`0')",
+  "      --filelock=STRING     filelock name",
   "      --host=STRING         local hostname  (default=`localhost')",
   "  -p, --port=INT            local port  (default=`59900')",
   "  -s, --remotehost=STRING   remote hostname  (default=`localhost')",
@@ -79,6 +80,8 @@ static int
 icee_cmdline_parser_internal (int argc, char **argv, struct icee_args_info *args_info,
                         struct icee_cmdline_parser_params *params, const char *additional_error);
 
+static int
+icee_cmdline_parser_required2 (struct icee_args_info *args_info, const char *prog_name, const char *additional_error);
 
 static char *
 gengetopt_strdup (const char *s);
@@ -95,12 +98,13 @@ void clear_given (struct icee_args_info *args_info)
   args_info->chunk_given = 0 ;
   args_info->timeout_given = 0 ;
   args_info->sleep_given = 0 ;
-  args_info->nsteps_given = 0 ;
-  args_info->params_given = 0 ;
+  args_info->nstep_given = 0 ;
+  args_info->param_given = 0 ;
   args_info->prefix_given = 0 ;
   args_info->append_given = 0 ;
   args_info->outfile_given = 0 ;
   args_info->mpicolor_given = 0 ;
+  args_info->filelock_given = 0 ;
   args_info->host_given = 0 ;
   args_info->port_given = 0 ;
   args_info->remotehost_given = 0 ;
@@ -132,10 +136,10 @@ void clear_args (struct icee_args_info *args_info)
   args_info->timeout_orig = NULL;
   args_info->sleep_arg = 5;
   args_info->sleep_orig = NULL;
-  args_info->nsteps_arg = 10;
-  args_info->nsteps_orig = NULL;
-  args_info->params_arg = gengetopt_strdup ("");
-  args_info->params_orig = NULL;
+  args_info->nstep_arg = 10;
+  args_info->nstep_orig = NULL;
+  args_info->param_arg = gengetopt_strdup ("");
+  args_info->param_orig = NULL;
   args_info->prefix_arg = gengetopt_strdup ("");
   args_info->prefix_orig = NULL;
   args_info->append_flag = 0;
@@ -143,6 +147,8 @@ void clear_args (struct icee_args_info *args_info)
   args_info->outfile_orig = NULL;
   args_info->mpicolor_arg = 0;
   args_info->mpicolor_orig = NULL;
+  args_info->filelock_arg = NULL;
+  args_info->filelock_orig = NULL;
   args_info->host_arg = gengetopt_strdup ("localhost");
   args_info->host_orig = NULL;
   args_info->port_arg = 59900;
@@ -181,24 +187,27 @@ void init_args_info(struct icee_args_info *args_info)
   args_info->chunk_help = icee_args_info_help[6] ;
   args_info->timeout_help = icee_args_info_help[7] ;
   args_info->sleep_help = icee_args_info_help[8] ;
-  args_info->nsteps_help = icee_args_info_help[9] ;
-  args_info->params_help = icee_args_info_help[10] ;
+  args_info->nstep_help = icee_args_info_help[9] ;
+  args_info->param_help = icee_args_info_help[10] ;
   args_info->prefix_help = icee_args_info_help[11] ;
   args_info->append_help = icee_args_info_help[12] ;
   args_info->outfile_help = icee_args_info_help[13] ;
   args_info->mpicolor_help = icee_args_info_help[14] ;
-  args_info->host_help = icee_args_info_help[15] ;
-  args_info->port_help = icee_args_info_help[16] ;
-  args_info->remotehost_help = icee_args_info_help[17] ;
-  args_info->remoteport_help = icee_args_info_help[18] ;
-  args_info->method_help = icee_args_info_help[19] ;
-  args_info->verbose_help = icee_args_info_help[20] ;
-  args_info->contact_help = icee_args_info_help[21] ;
-  args_info->passive_help = icee_args_info_help[22] ;
-  args_info->nclient_help = icee_args_info_help[23] ;
-  args_info->isnative_help = icee_args_info_help[24] ;
-  args_info->remotelist_help = icee_args_info_help[25] ;
-  args_info->attrlist_help = icee_args_info_help[26] ;
+  args_info->filelock_help = icee_args_info_help[15] ;
+  args_info->filelock_min = 2;
+  args_info->filelock_max = 2;
+  args_info->host_help = icee_args_info_help[16] ;
+  args_info->port_help = icee_args_info_help[17] ;
+  args_info->remotehost_help = icee_args_info_help[18] ;
+  args_info->remoteport_help = icee_args_info_help[19] ;
+  args_info->method_help = icee_args_info_help[20] ;
+  args_info->verbose_help = icee_args_info_help[21] ;
+  args_info->contact_help = icee_args_info_help[22] ;
+  args_info->passive_help = icee_args_info_help[23] ;
+  args_info->nclient_help = icee_args_info_help[24] ;
+  args_info->isnative_help = icee_args_info_help[25] ;
+  args_info->remotelist_help = icee_args_info_help[26] ;
+  args_info->attrlist_help = icee_args_info_help[27] ;
   
 }
 
@@ -274,6 +283,57 @@ free_string_field (char **s)
     }
 }
 
+/** @brief generic value variable */
+union generic_value {
+    int int_arg;
+    float float_arg;
+#ifdef HAVE_LONG_LONG
+    long long int longlong_arg;
+#else
+    long longlong_arg;
+#endif
+    char *string_arg;
+    const char *default_string_arg;
+};
+
+/** @brief holds temporary values for multiple options */
+struct generic_list
+{
+  union generic_value arg;
+  char *orig;
+  struct generic_list *next;
+};
+
+/**
+ * @brief add a node at the head of the list 
+ */
+static void add_node(struct generic_list **list) {
+  struct generic_list *new_node = (struct generic_list *) malloc (sizeof (struct generic_list));
+  new_node->next = *list;
+  *list = new_node;
+  new_node->arg.string_arg = 0;
+  new_node->orig = 0;
+}
+
+
+static void
+free_multiple_string_field(unsigned int len, char ***arg, char ***orig)
+{
+  unsigned int i;
+  if (*arg) {
+    for (i = 0; i < len; ++i)
+      {
+        free_string_field(&((*arg)[i]));
+        free_string_field(&((*orig)[i]));
+      }
+    free_string_field(&((*arg)[0])); /* free default string */
+
+    free (*arg);
+    *arg = 0;
+    free (*orig);
+    *orig = 0;
+  }
+}
 
 static void
 icee_cmdline_parser_release (struct icee_args_info *args_info)
@@ -287,14 +347,15 @@ icee_cmdline_parser_release (struct icee_args_info *args_info)
   free_string_field (&(args_info->chunk_orig));
   free_string_field (&(args_info->timeout_orig));
   free_string_field (&(args_info->sleep_orig));
-  free_string_field (&(args_info->nsteps_orig));
-  free_string_field (&(args_info->params_arg));
-  free_string_field (&(args_info->params_orig));
+  free_string_field (&(args_info->nstep_orig));
+  free_string_field (&(args_info->param_arg));
+  free_string_field (&(args_info->param_orig));
   free_string_field (&(args_info->prefix_arg));
   free_string_field (&(args_info->prefix_orig));
   free_string_field (&(args_info->outfile_arg));
   free_string_field (&(args_info->outfile_orig));
   free_string_field (&(args_info->mpicolor_orig));
+  free_multiple_string_field (args_info->filelock_given, &(args_info->filelock_arg), &(args_info->filelock_orig));
   free_string_field (&(args_info->host_arg));
   free_string_field (&(args_info->host_orig));
   free_string_field (&(args_info->port_orig));
@@ -329,6 +390,14 @@ write_into_file(FILE *outfile, const char *opt, const char *arg, const char *val
   }
 }
 
+static void
+write_multiple_into_file(FILE *outfile, int len, const char *opt, char **arg, const char *values[])
+{
+  int i;
+  
+  for (i = 0; i < len; ++i)
+    write_into_file(outfile, opt, (arg ? arg[i] : 0), values);
+}
 
 int
 icee_cmdline_parser_dump(FILE *outfile, struct icee_args_info *args_info)
@@ -359,10 +428,10 @@ icee_cmdline_parser_dump(FILE *outfile, struct icee_args_info *args_info)
     write_into_file(outfile, "timeout", args_info->timeout_orig, 0);
   if (args_info->sleep_given)
     write_into_file(outfile, "sleep", args_info->sleep_orig, 0);
-  if (args_info->nsteps_given)
-    write_into_file(outfile, "nsteps", args_info->nsteps_orig, 0);
-  if (args_info->params_given)
-    write_into_file(outfile, "params", args_info->params_orig, 0);
+  if (args_info->nstep_given)
+    write_into_file(outfile, "nstep", args_info->nstep_orig, 0);
+  if (args_info->param_given)
+    write_into_file(outfile, "param", args_info->param_orig, 0);
   if (args_info->prefix_given)
     write_into_file(outfile, "prefix", args_info->prefix_orig, 0);
   if (args_info->append_given)
@@ -371,6 +440,7 @@ icee_cmdline_parser_dump(FILE *outfile, struct icee_args_info *args_info)
     write_into_file(outfile, "outfile", args_info->outfile_orig, 0);
   if (args_info->mpicolor_given)
     write_into_file(outfile, "mpicolor", args_info->mpicolor_orig, 0);
+  write_multiple_into_file(outfile, args_info->filelock_given, "filelock", args_info->filelock_orig, 0);
   if (args_info->host_given)
     write_into_file(outfile, "host", args_info->host_orig, 0);
   if (args_info->port_given)
@@ -442,6 +512,141 @@ gengetopt_strdup (const char *s)
   return result;
 }
 
+static char *
+get_multiple_arg_token(const char *arg)
+{
+  const char *tok;
+  char *ret;
+  size_t len, num_of_escape, i, j;
+
+  if (!arg)
+    return 0;
+
+  tok = strchr (arg, ',');
+  num_of_escape = 0;
+
+  /* make sure it is not escaped */
+  while (tok)
+    {
+      if (*(tok-1) == '\\')
+        {
+          /* find the next one */
+          tok = strchr (tok+1, ',');
+          ++num_of_escape;
+        }
+      else
+        break;
+    }
+
+  if (tok)
+    len = (size_t)(tok - arg + 1);
+  else
+    len = strlen (arg) + 1;
+
+  len -= num_of_escape;
+
+  ret = (char *) malloc (len);
+
+  i = 0;
+  j = 0;
+  while (arg[i] && (j < len-1))
+    {
+      if (arg[i] == '\\' && 
+	  arg[ i + 1 ] && 
+	  arg[ i + 1 ] == ',')
+        ++i;
+
+      ret[j++] = arg[i++];
+    }
+
+  ret[len-1] = '\0';
+
+  return ret;
+}
+
+static const char *
+get_multiple_arg_token_next(const char *arg)
+{
+  const char *tok;
+
+  if (!arg)
+    return 0;
+
+  tok = strchr (arg, ',');
+
+  /* make sure it is not escaped */
+  while (tok)
+    {
+      if (*(tok-1) == '\\')
+        {
+          /* find the next one */
+          tok = strchr (tok+1, ',');
+        }
+      else
+        break;
+    }
+
+  if (! tok || strlen(tok) == 1)
+    return 0;
+
+  return tok+1;
+}
+
+static int
+check_multiple_option_occurrences(const char *prog_name, unsigned int option_given, unsigned int min, unsigned int max, const char *option_desc);
+
+int
+check_multiple_option_occurrences(const char *prog_name, unsigned int option_given, unsigned int min, unsigned int max, const char *option_desc)
+{
+  int error = 0;
+
+  if (option_given && (min > 0 || max > 0))
+    {
+      if (min > 0 && max > 0)
+        {
+          if (min == max)
+            {
+              /* specific occurrences */
+              if (option_given != (unsigned int) min)
+                {
+                  fprintf (stderr, "%s: %s option occurrences must be %d\n",
+                    prog_name, option_desc, min);
+                  error = 1;
+                }
+            }
+          else if (option_given < (unsigned int) min
+                || option_given > (unsigned int) max)
+            {
+              /* range occurrences */
+              fprintf (stderr, "%s: %s option occurrences must be between %d and %d\n",
+                prog_name, option_desc, min, max);
+              error = 1;
+            }
+        }
+      else if (min > 0)
+        {
+          /* at least check */
+          if (option_given < min)
+            {
+              fprintf (stderr, "%s: %s option occurrences must be at least %d\n",
+                prog_name, option_desc, min);
+              error = 1;
+            }
+        }
+      else if (max > 0)
+        {
+          /* at most check */
+          if (option_given > max)
+            {
+              fprintf (stderr, "%s: %s option occurrences must be at most %d\n",
+                prog_name, option_desc, max);
+              error = 1;
+            }
+        }
+    }
+    
+  return error;
+}
 int
 icee_cmdline_parser (int argc, char **argv, struct icee_args_info *args_info)
 {
@@ -490,9 +695,34 @@ icee_cmdline_parser2 (int argc, char **argv, struct icee_args_info *args_info, i
 int
 icee_cmdline_parser_required (struct icee_args_info *args_info, const char *prog_name)
 {
-  FIX_UNUSED (args_info);
-  FIX_UNUSED (prog_name);
-  return EXIT_SUCCESS;
+  int result = EXIT_SUCCESS;
+
+  if (icee_cmdline_parser_required2(args_info, prog_name, 0) > 0)
+    result = EXIT_FAILURE;
+
+  if (result == EXIT_FAILURE)
+    {
+      icee_cmdline_parser_free (args_info);
+      exit (EXIT_FAILURE);
+    }
+  
+  return result;
+}
+
+int
+icee_cmdline_parser_required2 (struct icee_args_info *args_info, const char *prog_name, const char *additional_error)
+{
+  int error = 0;
+  FIX_UNUSED (additional_error);
+
+  /* checks for required options */
+  if (check_multiple_option_occurrences(prog_name, args_info->filelock_given, args_info->filelock_min, args_info->filelock_max, "'--filelock'"))
+     error = 1;
+  
+  
+  /* checks for dependences among options */
+
+  return error;
 }
 
 
@@ -623,6 +853,172 @@ int update_arg(void *field, char **orig_field,
   return 0; /* OK */
 }
 
+/**
+ * @brief store information about a multiple option in a temporary list
+ * @param list where to (temporarily) store multiple options
+ */
+static
+int update_multiple_arg_temp(struct generic_list **list,
+               unsigned int *prev_given, const char *val,
+               const char *possible_values[], const char *default_value,
+               icee_cmdline_parser_arg_type arg_type,
+               const char *long_opt, char short_opt,
+               const char *additional_error)
+{
+  /* store single arguments */
+  char *multi_token;
+  const char *multi_next;
+
+  if (arg_type == ARG_NO) {
+    (*prev_given)++;
+    return 0; /* OK */
+  }
+
+  multi_token = get_multiple_arg_token(val);
+  multi_next = get_multiple_arg_token_next (val);
+
+  while (1)
+    {
+      add_node (list);
+      if (update_arg((void *)&((*list)->arg), &((*list)->orig), 0,
+          prev_given, multi_token, possible_values, default_value, 
+          arg_type, 0, 1, 1, 1, long_opt, short_opt, additional_error)) {
+        if (multi_token) free(multi_token);
+        return 1; /* failure */
+      }
+
+      if (multi_next)
+        {
+          multi_token = get_multiple_arg_token(multi_next);
+          multi_next = get_multiple_arg_token_next (multi_next);
+        }
+      else
+        break;
+    }
+
+  return 0; /* OK */
+}
+
+/**
+ * @brief free the passed list (including possible string argument)
+ */
+static
+void free_list(struct generic_list *list, short string_arg)
+{
+  if (list) {
+    struct generic_list *tmp;
+    while (list)
+      {
+        tmp = list;
+        if (string_arg && list->arg.string_arg)
+          free (list->arg.string_arg);
+        if (list->orig)
+          free (list->orig);
+        list = list->next;
+        free (tmp);
+      }
+  }
+}
+
+/**
+ * @brief updates a multiple option starting from the passed list
+ */
+static
+void update_multiple_arg(void *field, char ***orig_field,
+               unsigned int field_given, unsigned int prev_given, union generic_value *default_value,
+               icee_cmdline_parser_arg_type arg_type,
+               struct generic_list *list)
+{
+  int i;
+  struct generic_list *tmp;
+
+  if (prev_given && list) {
+    *orig_field = (char **) realloc (*orig_field, (field_given + prev_given) * sizeof (char *));
+
+    switch(arg_type) {
+    case ARG_INT:
+      *((int **)field) = (int *)realloc (*((int **)field), (field_given + prev_given) * sizeof (int)); break;
+    case ARG_FLOAT:
+      *((float **)field) = (float *)realloc (*((float **)field), (field_given + prev_given) * sizeof (float)); break;
+    case ARG_LONGLONG:
+#ifdef HAVE_LONG_LONG
+      *((long long int **)field) = (long long int *)realloc (*((long long int **)field), (field_given + prev_given) * sizeof (long long int)); break;
+#else
+      *((long **)field) = (long *)realloc (*((long **)field), (field_given + prev_given) * sizeof (long)); break;
+#endif
+    case ARG_STRING:
+      *((char ***)field) = (char **)realloc (*((char ***)field), (field_given + prev_given) * sizeof (char *)); break;
+    default:
+      break;
+    };
+    
+    for (i = (prev_given - 1); i >= 0; --i)
+      {
+        tmp = list;
+        
+        switch(arg_type) {
+        case ARG_INT:
+          (*((int **)field))[i + field_given] = tmp->arg.int_arg; break;
+        case ARG_FLOAT:
+          (*((float **)field))[i + field_given] = tmp->arg.float_arg; break;
+        case ARG_LONGLONG:
+#ifdef HAVE_LONG_LONG
+          (*((long long int **)field))[i + field_given] = tmp->arg.longlong_arg; break;
+#else
+          (*((long **)field))[i + field_given] = tmp->arg.longlong_arg; break;
+#endif
+        case ARG_STRING:
+          (*((char ***)field))[i + field_given] = tmp->arg.string_arg; break;
+        default:
+          break;
+        }        
+        (*orig_field) [i + field_given] = list->orig;
+        list = list->next;
+        free (tmp);
+      }
+  } else { /* set the default value */
+    if (default_value && ! field_given) {
+      switch(arg_type) {
+      case ARG_INT:
+        if (! *((int **)field)) {
+          *((int **)field) = (int *)malloc (sizeof (int));
+          (*((int **)field))[0] = default_value->int_arg; 
+        }
+        break;
+      case ARG_FLOAT:
+        if (! *((float **)field)) {
+          *((float **)field) = (float *)malloc (sizeof (float));
+          (*((float **)field))[0] = default_value->float_arg;
+        }
+        break;
+      case ARG_LONGLONG:
+#ifdef HAVE_LONG_LONG
+        if (! *((long long int **)field)) {
+          *((long long int **)field) = (long long int *)malloc (sizeof (long long int));
+          (*((long long int **)field))[0] = default_value->longlong_arg;
+        }
+#else
+        if (! *((long **)field)) {
+          *((long **)field) = (long *)malloc (sizeof (long));
+          (*((long **)field))[0] = default_value->longlong_arg;
+        }
+#endif
+        break;
+      case ARG_STRING:
+        if (! *((char ***)field)) {
+          *((char ***)field) = (char **)malloc (sizeof (char *));
+          (*((char ***)field))[0] = gengetopt_strdup(default_value->string_arg);
+        }
+        break;
+      default: break;
+      }
+      if (!(*orig_field)) {
+        *orig_field = (char **) malloc (sizeof (char *));
+        (*orig_field)[0] = 0;
+      }
+    }
+  }
+}
 
 int
 icee_cmdline_parser_internal (
@@ -631,6 +1027,7 @@ icee_cmdline_parser_internal (
 {
   int c;	/* Character of the parsed option.  */
 
+  struct generic_list * filelock_list = NULL;
   int error = 0;
   struct icee_args_info local_args_info;
   
@@ -670,12 +1067,13 @@ icee_cmdline_parser_internal (
         { "chunk",	1, NULL, 0 },
         { "timeout",	1, NULL, 0 },
         { "sleep",	1, NULL, 0 },
-        { "nsteps",	1, NULL, 0 },
-        { "params",	1, NULL, 0 },
+        { "nstep",	1, NULL, 0 },
+        { "param",	1, NULL, 0 },
         { "prefix",	1, NULL, 0 },
         { "append",	0, NULL, 0 },
         { "outfile",	1, NULL, 0 },
         { "mpicolor",	1, NULL, 0 },
+        { "filelock",	1, NULL, 0 },
         { "host",	1, NULL, 0 },
         { "port",	1, NULL, 'p' },
         { "remotehost",	1, NULL, 's' },
@@ -891,29 +1289,29 @@ icee_cmdline_parser_internal (
           
           }
           /* number of time steps.  */
-          else if (strcmp (long_options[option_index].name, "nsteps") == 0)
+          else if (strcmp (long_options[option_index].name, "nstep") == 0)
           {
           
           
-            if (update_arg( (void *)&(args_info->nsteps_arg), 
-                 &(args_info->nsteps_orig), &(args_info->nsteps_given),
-                &(local_args_info.nsteps_given), optarg, 0, "10", ARG_INT,
+            if (update_arg( (void *)&(args_info->nstep_arg), 
+                 &(args_info->nstep_orig), &(args_info->nstep_given),
+                &(local_args_info.nstep_given), optarg, 0, "10", ARG_INT,
                 check_ambiguity, override, 0, 0,
-                "nsteps", '-',
+                "nstep", '-',
                 additional_error))
               goto failure;
           
           }
           /* method params.  */
-          else if (strcmp (long_options[option_index].name, "params") == 0)
+          else if (strcmp (long_options[option_index].name, "param") == 0)
           {
           
           
-            if (update_arg( (void *)&(args_info->params_arg), 
-                 &(args_info->params_orig), &(args_info->params_given),
-                &(local_args_info.params_given), optarg, 0, "", ARG_STRING,
+            if (update_arg( (void *)&(args_info->param_arg), 
+                 &(args_info->param_orig), &(args_info->param_given),
+                &(local_args_info.param_given), optarg, 0, "", ARG_STRING,
                 check_ambiguity, override, 0, 0,
-                "params", '-',
+                "param", '-',
                 additional_error))
               goto failure;
           
@@ -968,6 +1366,17 @@ icee_cmdline_parser_internal (
                 &(local_args_info.mpicolor_given), optarg, 0, "0", ARG_INT,
                 check_ambiguity, override, 0, 0,
                 "mpicolor", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* filelock name.  */
+          else if (strcmp (long_options[option_index].name, "filelock") == 0)
+          {
+          
+            if (update_multiple_arg_temp(&filelock_list, 
+                &(local_args_info.filelock_given), optarg, 0, 0, ARG_STRING,
+                "filelock", '-',
                 additional_error))
               goto failure;
           
@@ -1051,7 +1460,18 @@ icee_cmdline_parser_internal (
     } /* while */
 
 
+  update_multiple_arg((void *)&(args_info->filelock_arg),
+    &(args_info->filelock_orig), args_info->filelock_given,
+    local_args_info.filelock_given, 0,
+    ARG_STRING, filelock_list);
 
+  args_info->filelock_given += local_args_info.filelock_given;
+  local_args_info.filelock_given = 0;
+  
+  if (check_required)
+    {
+      error += icee_cmdline_parser_required2 (args_info, argv[0], additional_error);
+    }
 
   icee_cmdline_parser_release (&local_args_info);
 
@@ -1061,6 +1481,7 @@ icee_cmdline_parser_internal (
   return 0;
 
 failure:
+  free_list (filelock_list, 1 );
   
   icee_cmdline_parser_release (&local_args_info);
   return (EXIT_FAILURE);
