@@ -517,7 +517,10 @@ int main (int argc, char ** argv)
                 
                 if (it==nstep-1) break;
 
-                sleep_with_interval((double)interval_sec, 100);
+                if (!use_lock)
+                {
+                    sleep_with_interval((double)interval_sec, 100);
+                }
 
                 // advance to 1) next available step with 2) blocking wait
                 adios_advance_step (f, 0, timeout_sec);
@@ -543,6 +546,7 @@ int main (int argc, char ** argv)
         adios_read_finalize_method (adios_read_method);
     }
 
+    MPI_Barrier(comm);
     if (rank==0)
     {
         printf ("Done.\n");
