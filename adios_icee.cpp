@@ -518,10 +518,7 @@ int main (int argc, char ** argv)
                 
                 if (it==nstep-1) break;
 
-                if (!use_lock)
-                {
-                    sleep_with_interval((double)interval_sec, 100);
-                }
+                sleep_with_interval((double)interval_sec, 100);
 
                 // advance to 1) next available step with 2) blocking wait
                 adios_advance_step (f, 0, timeout_sec);
