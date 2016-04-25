@@ -6,6 +6,9 @@
 #include <string.h>
 #include <time.h>
 #include <sys/time.h>
+#include <sys/stat.h>
+#include <sys/resource.h>
+#include <stdint.h>
 
 #define BUF_SIZE 2
 #define LOCK_MAX 1
