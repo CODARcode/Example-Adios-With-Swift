@@ -214,7 +214,8 @@ int main (int argc, char ** argv)
     if (args_info.client_flag)
         mode = CLIENT;
 
-    string initstr = string(args_info.param_arg);
+    string wparam = string(args_info.wparam_arg);
+    string rparam = string(args_info.rparam_arg);
     string prefix = string(args_info.prefix_arg);
 
     if (adios_write_method == "ICEE")
@@ -249,7 +250,7 @@ int main (int argc, char ** argv)
         if (args_info.attrlist_given)
             s << "attr_list=" << args_info.attrlist_arg << ";";
 
-        initstr = initstr + ";" + s.str();
+        wparam = wparam + ";" + s.str();
     }
 
     setlocale(LC_NUMERIC, "en_US.UTF-8");
@@ -262,7 +263,7 @@ int main (int argc, char ** argv)
     string fname_save = "icee_out.bp";
     
     adios_init_noxml (comm);
-    do_define(adios_write_method.c_str(), initstr.c_str());
+    do_define(adios_write_method.c_str(), wparam.c_str());
     
     uint64_t adios_groupsize;//, adios_totalsize;
     uint64_t G, O;
@@ -311,7 +312,7 @@ int main (int argc, char ** argv)
         {
             printf("===== SUMMARY =====\n");
             printf("%10s : %s\n", "Method", adios_write_method.c_str());
-            printf("%10s : %s\n", "Params", initstr.c_str());
+            printf("%10s : %s\n", "Params", rparam.c_str());
             printf("%10s : %'d (seconds)\n", "Interval", interval_sec);
             printf("%10s : %'d\n", "PEs", size);
             printf("%10s : %'llu x %'llu\n", "Local dims", NX, NY);
@@ -392,7 +393,7 @@ int main (int argc, char ** argv)
         ATYPE *data = NULL;
         uint64_t start[2], count[2];
 
-        err = adios_read_init_method (adios_read_method, comm, initstr.c_str());
+        err = adios_read_init_method (adios_read_method, comm, rparam.c_str());
         if (!err) {
             printf ("%s\n", adios_errmsg());
         }
@@ -438,13 +439,13 @@ int main (int argc, char ** argv)
             {
                 printf("===== SUMMARY =====\n");
                 printf("%10s : %s\n", "Method", args_info.readmethod_arg);
-                printf("%10s : %s\n", "Params", initstr.c_str());
+                printf("%10s : %s\n", "Params", rparam.c_str());
                 printf("%10s : %'d (seconds)\n", "Interval", interval_sec);
                 printf("%10s : %'d\n", "PEs", size);
                 printf("%10s : %'llu x %'llu\n", "Gl. dims", G, NY);
                 printf("%10s : %'d\n", "Steps", nstep);
                 printf("%10s : %s\n", "WMethod", adios_write_method.c_str());
-                printf("%10s : %s\n", "WParams", initstr.c_str());
+                printf("%10s : %s\n", "WParams", wparam.c_str());
                 printf("===================\n\n");
             }
 

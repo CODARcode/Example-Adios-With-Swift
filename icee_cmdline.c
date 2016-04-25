@@ -42,7 +42,8 @@ const char *icee_args_info_help[] = {
   "      --timeout=FLOAT       Timeout  (default=`10.0')",
   "      --sleep=INT           interval time  (default=`5')",
   "      --nstep=INT           number of time steps  (default=`10')",
-  "      --param=STRING        method params  (default=`')",
+  "      --wparam=STRING       write method params  (default=`')",
+  "      --rparam=STRING       read method params  (default=`')",
   "      --prefix=STRING       prefix  (default=`')",
   "      --append              append  (default=off)",
   "      --outfile=STRING      outfile",
@@ -99,7 +100,8 @@ void clear_given (struct icee_args_info *args_info)
   args_info->timeout_given = 0 ;
   args_info->sleep_given = 0 ;
   args_info->nstep_given = 0 ;
-  args_info->param_given = 0 ;
+  args_info->wparam_given = 0 ;
+  args_info->rparam_given = 0 ;
   args_info->prefix_given = 0 ;
   args_info->append_given = 0 ;
   args_info->outfile_given = 0 ;
@@ -138,8 +140,10 @@ void clear_args (struct icee_args_info *args_info)
   args_info->sleep_orig = NULL;
   args_info->nstep_arg = 10;
   args_info->nstep_orig = NULL;
-  args_info->param_arg = gengetopt_strdup ("");
-  args_info->param_orig = NULL;
+  args_info->wparam_arg = gengetopt_strdup ("");
+  args_info->wparam_orig = NULL;
+  args_info->rparam_arg = gengetopt_strdup ("");
+  args_info->rparam_orig = NULL;
   args_info->prefix_arg = gengetopt_strdup ("");
   args_info->prefix_orig = NULL;
   args_info->append_flag = 0;
@@ -188,26 +192,27 @@ void init_args_info(struct icee_args_info *args_info)
   args_info->timeout_help = icee_args_info_help[7] ;
   args_info->sleep_help = icee_args_info_help[8] ;
   args_info->nstep_help = icee_args_info_help[9] ;
-  args_info->param_help = icee_args_info_help[10] ;
-  args_info->prefix_help = icee_args_info_help[11] ;
-  args_info->append_help = icee_args_info_help[12] ;
-  args_info->outfile_help = icee_args_info_help[13] ;
-  args_info->mpicolor_help = icee_args_info_help[14] ;
-  args_info->filelock_help = icee_args_info_help[15] ;
+  args_info->wparam_help = icee_args_info_help[10] ;
+  args_info->rparam_help = icee_args_info_help[11] ;
+  args_info->prefix_help = icee_args_info_help[12] ;
+  args_info->append_help = icee_args_info_help[13] ;
+  args_info->outfile_help = icee_args_info_help[14] ;
+  args_info->mpicolor_help = icee_args_info_help[15] ;
+  args_info->filelock_help = icee_args_info_help[16] ;
   args_info->filelock_min = 2;
   args_info->filelock_max = 2;
-  args_info->host_help = icee_args_info_help[16] ;
-  args_info->port_help = icee_args_info_help[17] ;
-  args_info->remotehost_help = icee_args_info_help[18] ;
-  args_info->remoteport_help = icee_args_info_help[19] ;
-  args_info->method_help = icee_args_info_help[20] ;
-  args_info->verbose_help = icee_args_info_help[21] ;
-  args_info->contact_help = icee_args_info_help[22] ;
-  args_info->passive_help = icee_args_info_help[23] ;
-  args_info->nclient_help = icee_args_info_help[24] ;
-  args_info->isnative_help = icee_args_info_help[25] ;
-  args_info->remotelist_help = icee_args_info_help[26] ;
-  args_info->attrlist_help = icee_args_info_help[27] ;
+  args_info->host_help = icee_args_info_help[17] ;
+  args_info->port_help = icee_args_info_help[18] ;
+  args_info->remotehost_help = icee_args_info_help[19] ;
+  args_info->remoteport_help = icee_args_info_help[20] ;
+  args_info->method_help = icee_args_info_help[21] ;
+  args_info->verbose_help = icee_args_info_help[22] ;
+  args_info->contact_help = icee_args_info_help[23] ;
+  args_info->passive_help = icee_args_info_help[24] ;
+  args_info->nclient_help = icee_args_info_help[25] ;
+  args_info->isnative_help = icee_args_info_help[26] ;
+  args_info->remotelist_help = icee_args_info_help[27] ;
+  args_info->attrlist_help = icee_args_info_help[28] ;
   
 }
 
@@ -348,8 +353,10 @@ icee_cmdline_parser_release (struct icee_args_info *args_info)
   free_string_field (&(args_info->timeout_orig));
   free_string_field (&(args_info->sleep_orig));
   free_string_field (&(args_info->nstep_orig));
-  free_string_field (&(args_info->param_arg));
-  free_string_field (&(args_info->param_orig));
+  free_string_field (&(args_info->wparam_arg));
+  free_string_field (&(args_info->wparam_orig));
+  free_string_field (&(args_info->rparam_arg));
+  free_string_field (&(args_info->rparam_orig));
   free_string_field (&(args_info->prefix_arg));
   free_string_field (&(args_info->prefix_orig));
   free_string_field (&(args_info->outfile_arg));
@@ -430,8 +437,10 @@ icee_cmdline_parser_dump(FILE *outfile, struct icee_args_info *args_info)
     write_into_file(outfile, "sleep", args_info->sleep_orig, 0);
   if (args_info->nstep_given)
     write_into_file(outfile, "nstep", args_info->nstep_orig, 0);
-  if (args_info->param_given)
-    write_into_file(outfile, "param", args_info->param_orig, 0);
+  if (args_info->wparam_given)
+    write_into_file(outfile, "wparam", args_info->wparam_orig, 0);
+  if (args_info->rparam_given)
+    write_into_file(outfile, "rparam", args_info->rparam_orig, 0);
   if (args_info->prefix_given)
     write_into_file(outfile, "prefix", args_info->prefix_orig, 0);
   if (args_info->append_given)
@@ -1068,7 +1077,8 @@ icee_cmdline_parser_internal (
         { "timeout",	1, NULL, 0 },
         { "sleep",	1, NULL, 0 },
         { "nstep",	1, NULL, 0 },
-        { "param",	1, NULL, 0 },
+        { "wparam",	1, NULL, 0 },
+        { "rparam",	1, NULL, 0 },
         { "prefix",	1, NULL, 0 },
         { "append",	0, NULL, 0 },
         { "outfile",	1, NULL, 0 },
@@ -1302,16 +1312,30 @@ icee_cmdline_parser_internal (
               goto failure;
           
           }
-          /* method params.  */
-          else if (strcmp (long_options[option_index].name, "param") == 0)
+          /* write method params.  */
+          else if (strcmp (long_options[option_index].name, "wparam") == 0)
           {
           
           
-            if (update_arg( (void *)&(args_info->param_arg), 
-                 &(args_info->param_orig), &(args_info->param_given),
-                &(local_args_info.param_given), optarg, 0, "", ARG_STRING,
+            if (update_arg( (void *)&(args_info->wparam_arg), 
+                 &(args_info->wparam_orig), &(args_info->wparam_given),
+                &(local_args_info.wparam_given), optarg, 0, "", ARG_STRING,
                 check_ambiguity, override, 0, 0,
-                "param", '-',
+                "wparam", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* read method params.  */
+          else if (strcmp (long_options[option_index].name, "rparam") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->rparam_arg), 
+                 &(args_info->rparam_orig), &(args_info->rparam_given),
+                &(local_args_info.rparam_given), optarg, 0, "", ARG_STRING,
+                check_ambiguity, override, 0, 0,
+                "rparam", '-',
                 additional_error))
               goto failure;
           

@@ -70,9 +70,12 @@ struct icee_args_info
   int nstep_arg;	/**< @brief number of time steps (default='10').  */
   char * nstep_orig;	/**< @brief number of time steps original value given at command line.  */
   const char *nstep_help; /**< @brief number of time steps help description.  */
-  char * param_arg;	/**< @brief method params (default='').  */
-  char * param_orig;	/**< @brief method params original value given at command line.  */
-  const char *param_help; /**< @brief method params help description.  */
+  char * wparam_arg;	/**< @brief write method params (default='').  */
+  char * wparam_orig;	/**< @brief write method params original value given at command line.  */
+  const char *wparam_help; /**< @brief write method params help description.  */
+  char * rparam_arg;	/**< @brief read method params (default='').  */
+  char * rparam_orig;	/**< @brief read method params original value given at command line.  */
+  const char *rparam_help; /**< @brief read method params help description.  */
   char * prefix_arg;	/**< @brief prefix (default='').  */
   char * prefix_orig;	/**< @brief prefix original value given at command line.  */
   const char *prefix_help; /**< @brief prefix help description.  */
@@ -134,7 +137,8 @@ struct icee_args_info
   unsigned int timeout_given ;	/**< @brief Whether timeout was given.  */
   unsigned int sleep_given ;	/**< @brief Whether sleep was given.  */
   unsigned int nstep_given ;	/**< @brief Whether nstep was given.  */
-  unsigned int param_given ;	/**< @brief Whether param was given.  */
+  unsigned int wparam_given ;	/**< @brief Whether wparam was given.  */
+  unsigned int rparam_given ;	/**< @brief Whether rparam was given.  */
   unsigned int prefix_given ;	/**< @brief Whether prefix was given.  */
   unsigned int append_given ;	/**< @brief Whether append was given.  */
   unsigned int outfile_given ;	/**< @brief Whether outfile was given.  */
