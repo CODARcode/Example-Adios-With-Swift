@@ -513,7 +513,7 @@ int main (int argc, char ** argv)
                 }
                 
                 printf(">>> %14.03f %5d %5d %9.03e %9.03f %9.03e %9.03f %9.03e %9.03f\n",
-                       t0, it, rank,
+                       t0, f->current_step, rank,
                        t_elap[0], (double)adios_groupsize/t_elap[0]/1024.0/1024.0,
                        t_elap[1], (double)adios_groupsize/t_elap[1]/1024.0/1024.0,
                        t_elap[2], (double)adios_groupsize/t_elap[2]/1024.0/1024.0);

@@ -13,7 +13,7 @@ parser.add_argument('--step', help='timestep', type=int, default=0)
 parser.add_argument('--rank', help='rank', type=int, default=0)
 parser.add_argument('--ymin', help='ymin', type=float)
 parser.add_argument('--display', help='xwin display', action='store_true', default=False)
-parser.add_argument('--nosave', help='no image save', action='store_true', default=False)
+parser.add_argument('--save', help='image save', action='store_true', default=False)
 parser.add_argument('--nosummary', help='no summary print', action='store_true', default=False)
 parser.add_argument('--byrow', help='print summary by rows', action='store_true', default=False)
 parser.add_argument('--prefix', help='prefix')
@@ -121,7 +121,7 @@ if not args.nosummary:
         print '%7s' % 'MAX', ' '.join(map(lambda x: '%7.3f'%x, np.nanmax(elap, 1)))
 
 
-if not args.nosave:
+if args.save:
     import matplotlib as mpl
     import matplotlib.pyplot as plt
     from matplotlib.ticker import FormatStrFormatter
