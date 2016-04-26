@@ -1,12 +1,23 @@
 CC = mpicc
 CXX = mpicxx
-CFLAGS = -g -DVERSION=$(shell git describe --abbrev=4 --dirty --always --tags)
+CFLAGS = -g -DVERSION=$(shell git describe --abbrev=4 --dirty --always --tags) 
+LDFLAGS =
 
 ADIOS_INC = $(shell adios_config -c)
 ADIOS_LIB = $(shell adios_config -l)
 
 INCS = $(ADIOS_INC)
 LIBS = $(ADIOS_LIB)
+
+ifneq (,${HOST})
+  SYSTEMS := ${HOST}
+else
+  SYSTEMS := $(shell hostname)
+endif
+
+ifneq (,$(findstring cori, $(SYSTEMS)))
+  LDFLAGS += -zmuldefs
+endif
 
 .PHONE: all clean ggo
 
@@ -19,13 +30,13 @@ all: adios_icee
 	$(CXX) $(CFLAGS) $(INCS) -c $<
 
 adios_write: adios_write.cpp 
-	$(CXX) $(CFLAGS) $(ADIOS_INC) -o $@ $^ $(ADIOS_LIB)
+	$(CXX) $(CFLAGS) $(INCS) -o $@ $^ $(LIBS)
 
 adios_read: adios_read.cpp icee_cmdline.c
-	$(CXX) $(CFLAGS) $(ADIOS_INC) -o $@ $^ $(ADIOS_LIB)
+	$(CXX) $(CFLAGS) $(INCS) -o $@ $^ $(LIBS)
 
 adios_icee: adios_icee.o icee_cmdline.o filelock.o
-	$(CXX) $(CFLAGS) $(ADIOS_INC) -o $@ $^ $(ADIOS_LIB)
+	$(CXX) $(LDFLAGS) -o $@ $^ $(LIBS)
 
 ggo: 
 	gengetopt --input=icee_cmdline.ggo --no-handle-version
