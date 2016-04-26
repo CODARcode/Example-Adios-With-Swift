@@ -75,8 +75,7 @@ void do_define(const char* adios_write_method, const char* initstr)
     int64_t       m_adios_group;
     
     // adios_flag_no to turn off statics
-    //adios_declare_group (&m_adios_group, "restart", "", adios_flag_no);
-    adios_declare_group (&m_adios_group, "restart", "", adios_flag_yes);
+    adios_declare_group (&m_adios_group, "restart", "", adios_flag_no);
     adios_select_method (m_adios_group, adios_write_method, initstr, "");
     
     adios_define_var (m_adios_group, "NX"
