@@ -160,6 +160,8 @@ int main (int argc, char ** argv)
     float timeout_sec = args_info.timeout_arg;
     int   interval_sec = args_info.sleep_arg;
     int   nstep = args_info.nstep_arg;
+    if (nstep < 0)
+        nstep = INT32_MAX;
 
     if (args_info.writemethod_given)
         adios_write_method = string(args_info.writemethod_arg);
