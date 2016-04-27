@@ -307,8 +307,8 @@ int main (int argc, char ** argv)
     setlocale(LC_NUMERIC, "en_US.UTF-8");
 
     string fname = "icee.bp";
-    if (args_info.outfile_given)
-        fname = string(args_info.outfile_arg);
+    if (args_info.filename_given)
+        fname = string(args_info.filename_arg);
     if (prefix.length() > 0)
         fname = prefix + "/" + fname;
     string fname_save = "icee_out.bp";
