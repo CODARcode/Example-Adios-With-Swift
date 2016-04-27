@@ -36,8 +36,13 @@ def get_timinglines(fname, tindex=4):
                 selected.append(line)
             elif line.strip().startswith('PEs'):
                 npe = locale.atoi(line.strip().split()[2])
-            elif line.strip().startswith('Steps'):
-                nsteps = locale.atoi(line.strip().split()[2])
+            #elif line.strip().startswith('Steps'):
+            #    nsteps = locale.atoi(line.strip().split()[2])
+
+    for line in selected:
+        x = line.split()
+        istep = int(x[2]) + 1
+        nsteps = istep if istep > nsteps else nsteps
 
     elap = np.zeros((nsteps,npe), dtype=np.float)
     stamp = np.zeros((nsteps,npe), dtype=np.float)
@@ -45,7 +50,7 @@ def get_timinglines(fname, tindex=4):
     elap[:] = np.nan
     stamp[:] = np.nan
     thrp[:] = np.nan
-
+        
     for line in selected:
         x = line.split()
         stamp[int(x[2]), int(x[3])] = float(x[1])
