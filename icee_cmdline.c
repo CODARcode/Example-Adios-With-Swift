@@ -49,6 +49,7 @@ const char *icee_args_info_help[] = {
   "      --outfile=STRING      outfile",
   "      --mpicolor=INT        MPI comm color  (default=`0')",
   "      --filelock=STRING     filelock name",
+  "      --evilread            enable evil read  (default=off)",
   "      --host=STRING         local hostname  (default=`localhost')",
   "  -p, --port=INT            local port  (default=`59900')",
   "  -s, --remotehost=STRING   remote hostname  (default=`localhost')",
@@ -107,6 +108,7 @@ void clear_given (struct icee_args_info *args_info)
   args_info->outfile_given = 0 ;
   args_info->mpicolor_given = 0 ;
   args_info->filelock_given = 0 ;
+  args_info->evilread_given = 0 ;
   args_info->host_given = 0 ;
   args_info->port_given = 0 ;
   args_info->remotehost_given = 0 ;
@@ -153,6 +155,7 @@ void clear_args (struct icee_args_info *args_info)
   args_info->mpicolor_orig = NULL;
   args_info->filelock_arg = NULL;
   args_info->filelock_orig = NULL;
+  args_info->evilread_flag = 0;
   args_info->host_arg = gengetopt_strdup ("localhost");
   args_info->host_orig = NULL;
   args_info->port_arg = 59900;
@@ -201,18 +204,19 @@ void init_args_info(struct icee_args_info *args_info)
   args_info->filelock_help = icee_args_info_help[16] ;
   args_info->filelock_min = 2;
   args_info->filelock_max = 2;
-  args_info->host_help = icee_args_info_help[17] ;
-  args_info->port_help = icee_args_info_help[18] ;
-  args_info->remotehost_help = icee_args_info_help[19] ;
-  args_info->remoteport_help = icee_args_info_help[20] ;
-  args_info->method_help = icee_args_info_help[21] ;
-  args_info->verbose_help = icee_args_info_help[22] ;
-  args_info->contact_help = icee_args_info_help[23] ;
-  args_info->passive_help = icee_args_info_help[24] ;
-  args_info->nclient_help = icee_args_info_help[25] ;
-  args_info->isnative_help = icee_args_info_help[26] ;
-  args_info->remotelist_help = icee_args_info_help[27] ;
-  args_info->attrlist_help = icee_args_info_help[28] ;
+  args_info->evilread_help = icee_args_info_help[17] ;
+  args_info->host_help = icee_args_info_help[18] ;
+  args_info->port_help = icee_args_info_help[19] ;
+  args_info->remotehost_help = icee_args_info_help[20] ;
+  args_info->remoteport_help = icee_args_info_help[21] ;
+  args_info->method_help = icee_args_info_help[22] ;
+  args_info->verbose_help = icee_args_info_help[23] ;
+  args_info->contact_help = icee_args_info_help[24] ;
+  args_info->passive_help = icee_args_info_help[25] ;
+  args_info->nclient_help = icee_args_info_help[26] ;
+  args_info->isnative_help = icee_args_info_help[27] ;
+  args_info->remotelist_help = icee_args_info_help[28] ;
+  args_info->attrlist_help = icee_args_info_help[29] ;
   
 }
 
@@ -450,6 +454,8 @@ icee_cmdline_parser_dump(FILE *outfile, struct icee_args_info *args_info)
   if (args_info->mpicolor_given)
     write_into_file(outfile, "mpicolor", args_info->mpicolor_orig, 0);
   write_multiple_into_file(outfile, args_info->filelock_given, "filelock", args_info->filelock_orig, 0);
+  if (args_info->evilread_given)
+    write_into_file(outfile, "evilread", 0, 0 );
   if (args_info->host_given)
     write_into_file(outfile, "host", args_info->host_orig, 0);
   if (args_info->port_given)
@@ -1084,6 +1090,7 @@ icee_cmdline_parser_internal (
         { "outfile",	1, NULL, 0 },
         { "mpicolor",	1, NULL, 0 },
         { "filelock",	1, NULL, 0 },
+        { "evilread",	0, NULL, 0 },
         { "host",	1, NULL, 0 },
         { "port",	1, NULL, 'p' },
         { "remotehost",	1, NULL, 's' },
@@ -1401,6 +1408,18 @@ icee_cmdline_parser_internal (
             if (update_multiple_arg_temp(&filelock_list, 
                 &(local_args_info.filelock_given), optarg, 0, 0, ARG_STRING,
                 "filelock", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* enable evil read.  */
+          else if (strcmp (long_options[option_index].name, "evilread") == 0)
+          {
+          
+          
+            if (update_arg((void *)&(args_info->evilread_flag), 0, &(args_info->evilread_given),
+                &(local_args_info.evilread_given), optarg, 0, 0, ARG_FLAG,
+                check_ambiguity, override, 1, 0, "evilread", '-',
                 additional_error))
               goto failure;
           

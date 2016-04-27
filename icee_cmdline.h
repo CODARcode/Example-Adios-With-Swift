@@ -92,6 +92,8 @@ struct icee_args_info
   unsigned int filelock_min; /**< @brief filelock name's minimum occurreces */
   unsigned int filelock_max; /**< @brief filelock name's maximum occurreces */
   const char *filelock_help; /**< @brief filelock name help description.  */
+  int evilread_flag;	/**< @brief enable evil read (default=off).  */
+  const char *evilread_help; /**< @brief enable evil read help description.  */
   char * host_arg;	/**< @brief local hostname (default='localhost').  */
   char * host_orig;	/**< @brief local hostname original value given at command line.  */
   const char *host_help; /**< @brief local hostname help description.  */
@@ -144,6 +146,7 @@ struct icee_args_info
   unsigned int outfile_given ;	/**< @brief Whether outfile was given.  */
   unsigned int mpicolor_given ;	/**< @brief Whether mpicolor was given.  */
   unsigned int filelock_given ;	/**< @brief Whether filelock was given.  */
+  unsigned int evilread_given ;	/**< @brief Whether evilread was given.  */
   unsigned int host_given ;	/**< @brief Whether host was given.  */
   unsigned int port_given ;	/**< @brief Whether port was given.  */
   unsigned int remotehost_given ;	/**< @brief Whether remotehost was given.  */
