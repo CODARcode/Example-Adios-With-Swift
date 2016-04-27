@@ -46,7 +46,7 @@ const char *icee_args_info_help[] = {
   "      --rparam=STRING       read method params  (default=`')",
   "      --prefix=STRING       prefix  (default=`')",
   "      --append              append  (default=off)",
-  "      --outfile=STRING      outfile",
+  "      --filename=STRING     filename",
   "      --mpicolor=INT        MPI comm color  (default=`0')",
   "      --filelock=STRING     filelock name",
   "      --evilread            enable evil read  (default=off)",
@@ -105,7 +105,7 @@ void clear_given (struct icee_args_info *args_info)
   args_info->rparam_given = 0 ;
   args_info->prefix_given = 0 ;
   args_info->append_given = 0 ;
-  args_info->outfile_given = 0 ;
+  args_info->filename_given = 0 ;
   args_info->mpicolor_given = 0 ;
   args_info->filelock_given = 0 ;
   args_info->evilread_given = 0 ;
@@ -149,8 +149,8 @@ void clear_args (struct icee_args_info *args_info)
   args_info->prefix_arg = gengetopt_strdup ("");
   args_info->prefix_orig = NULL;
   args_info->append_flag = 0;
-  args_info->outfile_arg = NULL;
-  args_info->outfile_orig = NULL;
+  args_info->filename_arg = NULL;
+  args_info->filename_orig = NULL;
   args_info->mpicolor_arg = 0;
   args_info->mpicolor_orig = NULL;
   args_info->filelock_arg = NULL;
@@ -199,7 +199,7 @@ void init_args_info(struct icee_args_info *args_info)
   args_info->rparam_help = icee_args_info_help[11] ;
   args_info->prefix_help = icee_args_info_help[12] ;
   args_info->append_help = icee_args_info_help[13] ;
-  args_info->outfile_help = icee_args_info_help[14] ;
+  args_info->filename_help = icee_args_info_help[14] ;
   args_info->mpicolor_help = icee_args_info_help[15] ;
   args_info->filelock_help = icee_args_info_help[16] ;
   args_info->filelock_min = 2;
@@ -363,8 +363,8 @@ icee_cmdline_parser_release (struct icee_args_info *args_info)
   free_string_field (&(args_info->rparam_orig));
   free_string_field (&(args_info->prefix_arg));
   free_string_field (&(args_info->prefix_orig));
-  free_string_field (&(args_info->outfile_arg));
-  free_string_field (&(args_info->outfile_orig));
+  free_string_field (&(args_info->filename_arg));
+  free_string_field (&(args_info->filename_orig));
   free_string_field (&(args_info->mpicolor_orig));
   free_multiple_string_field (args_info->filelock_given, &(args_info->filelock_arg), &(args_info->filelock_orig));
   free_string_field (&(args_info->host_arg));
@@ -449,8 +449,8 @@ icee_cmdline_parser_dump(FILE *outfile, struct icee_args_info *args_info)
     write_into_file(outfile, "prefix", args_info->prefix_orig, 0);
   if (args_info->append_given)
     write_into_file(outfile, "append", 0, 0 );
-  if (args_info->outfile_given)
-    write_into_file(outfile, "outfile", args_info->outfile_orig, 0);
+  if (args_info->filename_given)
+    write_into_file(outfile, "filename", args_info->filename_orig, 0);
   if (args_info->mpicolor_given)
     write_into_file(outfile, "mpicolor", args_info->mpicolor_orig, 0);
   write_multiple_into_file(outfile, args_info->filelock_given, "filelock", args_info->filelock_orig, 0);
@@ -1087,7 +1087,7 @@ icee_cmdline_parser_internal (
         { "rparam",	1, NULL, 0 },
         { "prefix",	1, NULL, 0 },
         { "append",	0, NULL, 0 },
-        { "outfile",	1, NULL, 0 },
+        { "filename",	1, NULL, 0 },
         { "mpicolor",	1, NULL, 0 },
         { "filelock",	1, NULL, 0 },
         { "evilread",	0, NULL, 0 },
@@ -1373,16 +1373,16 @@ icee_cmdline_parser_internal (
               goto failure;
           
           }
-          /* outfile.  */
-          else if (strcmp (long_options[option_index].name, "outfile") == 0)
+          /* filename.  */
+          else if (strcmp (long_options[option_index].name, "filename") == 0)
           {
           
           
-            if (update_arg( (void *)&(args_info->outfile_arg), 
-                 &(args_info->outfile_orig), &(args_info->outfile_given),
-                &(local_args_info.outfile_given), optarg, 0, 0, ARG_STRING,
+            if (update_arg( (void *)&(args_info->filename_arg), 
+                 &(args_info->filename_orig), &(args_info->filename_given),
+                &(local_args_info.filename_given), optarg, 0, 0, ARG_STRING,
                 check_ambiguity, override, 0, 0,
-                "outfile", '-',
+                "filename", '-',
                 additional_error))
               goto failure;
           
