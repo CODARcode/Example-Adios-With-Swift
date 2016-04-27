@@ -81,9 +81,9 @@ struct icee_args_info
   const char *prefix_help; /**< @brief prefix help description.  */
   int append_flag;	/**< @brief append (default=off).  */
   const char *append_help; /**< @brief append help description.  */
-  char * outfile_arg;	/**< @brief outfile.  */
-  char * outfile_orig;	/**< @brief outfile original value given at command line.  */
-  const char *outfile_help; /**< @brief outfile help description.  */
+  char * filename_arg;	/**< @brief filename.  */
+  char * filename_orig;	/**< @brief filename original value given at command line.  */
+  const char *filename_help; /**< @brief filename help description.  */
   int mpicolor_arg;	/**< @brief MPI comm color (default='0').  */
   char * mpicolor_orig;	/**< @brief MPI comm color original value given at command line.  */
   const char *mpicolor_help; /**< @brief MPI comm color help description.  */
@@ -143,7 +143,7 @@ struct icee_args_info
   unsigned int rparam_given ;	/**< @brief Whether rparam was given.  */
   unsigned int prefix_given ;	/**< @brief Whether prefix was given.  */
   unsigned int append_given ;	/**< @brief Whether append was given.  */
-  unsigned int outfile_given ;	/**< @brief Whether outfile was given.  */
+  unsigned int filename_given ;	/**< @brief Whether filename was given.  */
   unsigned int mpicolor_given ;	/**< @brief Whether mpicolor was given.  */
   unsigned int filelock_given ;	/**< @brief Whether filelock was given.  */
   unsigned int evilread_given ;	/**< @brief Whether evilread was given.  */
