@@ -1,6 +1,6 @@
 CC = mpicc
 CXX = mpicxx
-CFLAGS = -g -DVERSION=$(shell git describe --abbrev=4 --dirty --always --tags) 
+CFLAGS = -g -DVERSION=$(shell git describe --abbrev=7 --dirty --always --tags) 
 LDFLAGS =
 
 ADIOS_INC = $(shell adios_config -c)
