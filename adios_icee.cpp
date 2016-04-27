@@ -469,6 +469,7 @@ int main (int argc, char ** argv)
             for (int it =0; it < nstep; it++)
             {
 
+EVIL:
                 //MPI_Barrier(comm);
                 double t0 = MPI_Wtime();
 
@@ -476,18 +477,6 @@ int main (int argc, char ** argv)
                 adios_schedule_read_byid (f, sel, v->varid, 0, 1, data);
                 adios_perform_reads (f, 1); // blocking: non-zero, return only when all reads are completed. If zero, return immediately
                 
-                if (args_info.evilread_flag)
-                {
-                    char vname[32];
-                    while (1)
-                    {
-                        sprintf(vname, "var%02d", rand()%NVAR);
-                        printf("Reading ... %s\n", f->var_namelist[v->varid]);
-                        v = adios_inq_var (f, vname);
-                        adios_schedule_read_byid (f, sel, v->varid, 0, 1, data);
-                        adios_perform_reads (f, 1);
-                    }
-                }
                 
                 adios_release_step (f);
 
@@ -505,10 +494,19 @@ int main (int argc, char ** argv)
                     sum += (double) data[i];
                 }
 
-                printf("+++ %14.03f %5d %5d %9.03e %9.03f %'.0f\n",
+                printf("+++ %14.03f %5d %5d %9.03e %9.03f %s %'.0f\n",
                        t0, f->current_step, rank, t10,
                        (double)(NX*NY)*sizeof(ATYPE)/t10/1024.0/1024.0,
-                       sum);
+                       f->var_namelist[v->varid], sum);
+
+                if (args_info.evilread_flag)
+                {
+                    int vid = rand()%NVAR;
+                    char vname[32];
+                    sprintf(vname, "var%02d", vid);
+                    v = adios_inq_var (f, vname);
+                    goto EVIL;
+                }
                 
                 // Save what is read
                 if (args_info.append_flag)
