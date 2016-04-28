@@ -440,6 +440,11 @@ int main (int argc, char ** argv)
                 count[0] = NX;
             }
 
+            if (args_info.evilread_flag)
+            {
+                NX = args_info.len_arg;
+            }
+            
             adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, ((NVAR * NX * NY * sizeof(ATYPE))>>20) + 1L);
         
             if (rank==0)
@@ -473,10 +478,9 @@ int main (int argc, char ** argv)
 EVIL:
                 if (args_info.evilread_flag)
                 {
-                    start[0] = rand()%(G - NX);
+                    O = rand()%(G - NX);
+                    start[0] = O;
                     count[0] = NX;
-                    start[1] = 0;
-                    count[1] = NY;
                 }
                 
                 //MPI_Barrier(comm);
@@ -492,10 +496,6 @@ EVIL:
                 //MPI_Barrier(comm);
                 double t1 = MPI_Wtime();
                 double t10 = t1 - t0;
-
-                //ltime=time(NULL);
-                //timetext = asctime(localtime(&ltime));
-                //timetext[24] = '\0';
 
                 double sum = 0.0;
                 for (uint64_t i = 0; i < NX * NY; i++)
