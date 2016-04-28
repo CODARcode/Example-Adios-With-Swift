@@ -494,10 +494,10 @@ EVIL:
                     sum += (double) data[i];
                 }
 
-                printf("+++ %14.03f %5d %5d %9.03e %9.03f %s %'.0f\n",
+                printf("+++ %14.03f %5d %5d %9.03e %9.03f %s %'.0f %'.0f\n",
                        t0, f->current_step, rank, t10,
                        (double)(NX*NY)*sizeof(ATYPE)/t10/1024.0/1024.0,
-                       f->var_namelist[v->varid], sum);
+                       f->var_namelist[v->varid], sum, sum/NX/NY);
 
                 if (args_info.evilread_flag)
                 {
