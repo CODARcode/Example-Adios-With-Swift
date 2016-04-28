@@ -454,7 +454,8 @@ int main (int argc, char ** argv)
                 printf("%10s : %s\n", "Params", rparam.c_str());
                 printf("%10s : %'d (seconds)\n", "Interval", interval_sec);
                 printf("%10s : %'d\n", "PEs", size);
-                printf("%10s : %'llu x %'llu\n", "Gl. dims", G, NY);
+                printf("%10s : %'llu x %'llu\n", "Dims", G, NY);
+                printf("%10s : %'llu x %'llu\n", "Local dims", NX, NY);
                 printf("%10s : %'d\n", "Steps", nstep);
                 printf("%10s : %s\n", "WMethod", adios_write_method.c_str());
                 printf("%10s : %s\n", "WParams", wparam.c_str());
