@@ -475,8 +475,12 @@ int main (int argc, char ** argv)
             //while (adios_errno != err_end_of_stream) {
             for (int it =0; it < nstep; it++)
             {
-
-EVIL:
+                /*
+                 * Evil read
+                 * -. Continuously read with random offsets
+                 * -. NX is set by len argument
+                 */
+            EVIL:
                 if (args_info.evilread_flag)
                 {
                     O = rand()%(G - NX);
