@@ -470,9 +470,17 @@ int main (int argc, char ** argv)
             {
 
 EVIL:
+                if (args_info.evilread_flag)
+                {
+                    start[0] = rand()%(G - NX);
+                    count[0] = NX;
+                    start[1] = 0;
+                    count[1] = NY;
+                }
+                
                 //MPI_Barrier(comm);
                 double t0 = MPI_Wtime();
-
+                
                 sel = adios_selection_boundingbox (v->ndim, start, count);
                 adios_schedule_read_byid (f, sel, v->varid, 0, 1, data);
                 adios_perform_reads (f, 1); // blocking: non-zero, return only when all reads are completed. If zero, return immediately
