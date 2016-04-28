@@ -208,7 +208,7 @@ int main (int argc, char ** argv)
     int   interval_sec = args_info.sleep_arg;
     int   nstep = args_info.nstep_arg;
     if (nstep < 0)
-        nstep = INT32_MAX;
+        nstep = 1 << 30;
 
     if (args_info.writemethod_given)
         adios_write_method = string(args_info.writemethod_arg);
@@ -396,8 +396,9 @@ int main (int argc, char ** argv)
         uint64_t start[2], count[2];
 
         err = adios_read_init_method (adios_read_method, comm, rparam.c_str());
-        if (!err) {
-            printf ("%s\n", adios_errmsg());
+        if (err != 0) 
+        {
+            printf ("(%d) %s\n", err, adios_errmsg());
         }
 
         //f = adios_read_open_file (fname.c_str(), adios_read_method, comm);

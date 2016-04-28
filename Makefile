@@ -19,6 +19,10 @@ ifneq (,$(findstring cori, $(SYSTEMS)))
   LDFLAGS += -zmuldefs
 endif
 
+ifneq (,$(findstring sith, $(SYSTEMS)))
+  LDFLAGS += -Wl,--allow-multiple-definition
+endif
+
 .PHONE: all clean ggo
 
 all: adios_icee
