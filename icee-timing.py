@@ -72,7 +72,8 @@ def print_summary(fname):
                     break
 
             if (verbose):
-                print line.rstrip()
+                if not line.startswith('WARN'): 
+                    print line.rstrip()
 
 for logfile in args.logfile:
     print_summary(logfile)
