@@ -117,11 +117,13 @@ if not args.nosummary:
             '%9.3f' % np.nanstd(elap[:,:], ddof=1)
     else:
         print '%7s' % 'SEQ', ' '.join(map(lambda x: '%7s' % ('#'+str(x)), range(nsteps))), \
-            '%7s' % 'AVG', '%7s' % 'STD'
+            '%7s' % 'AVG', '%7s' % 'STD', '%7s' % 'Q1', '%7s' % 'Q3'
         print '%7s' % 'Time', ' '.join(map(lambda x: '%7.3f'%x, elap[:,0])), \
-            '%7.3f' % np.nanmean(elap[:,0]), '%7.3f' % np.nanstd(elap[:,0], ddof=1)
+            '%7.3f' % np.nanmean(elap[:,0]), '%7.3f' % np.nanstd(elap[:,0], ddof=1), \
+            '%7.3f' % np.nanpercentile(elap[:,0], 25), '%7.3f' % np.nanpercentile(elap[:,0], 75)
         print '%7s' % 'AVG', ' '.join(map(lambda x: '%7.3f'%x, np.nanmean(elap, 1))), \
-            '%7.3f' % np.nanmean(elap[:,:]), '%7.3f' % np.nanstd(elap[:,:], ddof=1)
+            '%7.3f' % np.nanmean(elap[:,:]), '%7.3f' % np.nanstd(elap[:,:], ddof=1), \
+            '%7.3f' % np.nanpercentile(elap[:,:], 25), '%7.3f' % np.nanpercentile(elap[:,:], 75), '%7.3f' % np.nanpercentile(elap[:,:], 50) 
         print '%7s' % 'STD', ' '.join(map(lambda x: '%7.3f'%x, np.nanstd(elap, 1, ddof=1)))
         print '%7s' % 'MIN', ' '.join(map(lambda x: '%7.3f'%x, np.nanmin(elap, 1)))
         print '%7s' % 'MAX', ' '.join(map(lambda x: '%7.3f'%x, np.nanmax(elap, 1)))
