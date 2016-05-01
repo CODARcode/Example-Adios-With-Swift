@@ -19,7 +19,7 @@ parser.add_argument('--byrow', help='print summary by rows', action='store_true'
 parser.add_argument('--prefix', help='prefix')
 parser.add_argument('--timeindex', help='timeindex', type=int, default=4)
 parser.add_argument('--outformat', help='image output format (e.g., "pdf", "pdf,png")', default='pdf')
-parser.add_argument('--removeoutlier', help='remove outliers', action='store_true', default=False)
+parser.add_argument('--remove-outlier', help='remove outliers', action='store_true', default=False)
 args = parser.parse_args()
 
 ymin = None if args.ymin is None else args.ymin
@@ -109,7 +109,7 @@ if args.filter is not None:
 
 if not args.nosummary:
     nsteps = elap.shape[0]
-    if args.removeoutlier:
+    if args.remove_outlier:
         ##len(x[np.where(np.isnan(x))])
         elap = reject_IQR_outlier(elap)
         print 'Outliers are removed (method: IQR)'
