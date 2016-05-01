@@ -16,6 +16,8 @@ else
 endif
 
 ifneq (,$(findstring cori, $(SYSTEMS)))
+  CC = cc
+  CXX = CC
   LDFLAGS += -zmuldefs
 endif
 
