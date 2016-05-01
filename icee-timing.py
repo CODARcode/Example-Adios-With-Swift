@@ -4,7 +4,7 @@ import argparse
 import sys
 import locale
 
-locale.setlocale( locale.LC_ALL, 'en_US.UTF-8' )
+locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
 
 parser = argparse.ArgumentParser()
 parser.add_argument('logfile', nargs='+', help='logfile')
@@ -19,11 +19,21 @@ parser.add_argument('--byrow', help='print summary by rows', action='store_true'
 parser.add_argument('--prefix', help='prefix')
 parser.add_argument('--timeindex', help='timeindex', type=int, default=4)
 parser.add_argument('--outformat', help='image output format (e.g., "pdf", "pdf,png")', default='pdf')
+parser.add_argument('--removeoutlier', help='remove outliers', action='store_true', default=False)
 args = parser.parse_args()
 
 ymin = None if args.ymin is None else args.ymin
 tid = args.step
 pid = args.rank
+
+def reject_IQR_outlier(x):
+    ''' replace IQR outliers with NAN '''
+    IQR = np.percentile(x, [25, 75])
+    out1 = IQR[1] + 1.5 * (IQR[1]-IQR[0])
+    out0 = IQR[0] - 1.5 * (IQR[1]-IQR[0])
+
+    x = np.where(np.logical_and(x >= out0, x <= out1), x, np.nan)
+    return x
 
 def get_timinglines(fname, tindex=4):
     selected = []
@@ -50,7 +60,7 @@ def get_timinglines(fname, tindex=4):
     elap[:] = np.nan
     stamp[:] = np.nan
     thrp[:] = np.nan
-        
+
     for line in selected:
         x = line.split()
         stamp[int(x[2]), int(x[3])] = float(x[1])
@@ -72,13 +82,14 @@ def print_summary(fname):
                     break
 
             if (verbose):
-                if not line.startswith('WARN'): 
+                if not line.startswith('WARN'):
                     print line.rstrip()
 
 for logfile in args.logfile:
     print_summary(logfile)
 
 elap, stamp, thrp = get_timinglines(args.logfile[0], args.timeindex)
+npe = elap.shape[1]
 print elap.shape
 for logfile in args.logfile[1:]:
     elap_, stamp_, thrp_ = get_timinglines(logfile, args.timeindex)
@@ -98,6 +109,11 @@ if args.filter is not None:
 
 if not args.nosummary:
     nsteps = elap.shape[0]
+    if args.removeoutlier:
+        ##len(x[np.where(np.isnan(x))])
+        elap = reject_IQR_outlier(elap)
+        print 'Outliers are removed (method: IQR)'
+
     if args.byrow:
         print '%9s %9s %9s %9s %9s %9s' % ('SEQ', 'Time(s)', 'AVG', 'STD', 'MIN', 'MAX')
         for t in range(nsteps):
@@ -110,24 +126,23 @@ if not args.nosummary:
 
         print '%9s' % '---'
         print '%9s' % 'AVG', \
-            '%9.3f' % np.nanmean(elap[:,0]), \
+            '%9.3f' % np.nanmean(elap[:,::npe]), \
             '%9.3f' % np.nanmean(elap[:,:])
         print '%9s' % 'STD', \
-            '%9.3f' % np.nanstd(elap[:,0], ddof=1), \
+            '%9.3f' % np.nanstd(elap[:,::npe], ddof=1), \
             '%9.3f' % np.nanstd(elap[:,:], ddof=1)
     else:
         print '%7s' % 'SEQ', ' '.join(map(lambda x: '%7s' % ('#'+str(x)), range(nsteps))), \
             '%7s' % 'AVG', '%7s' % 'STD', '%7s' % 'Q1', '%7s' % 'Q3'
-        print '%7s' % 'Time', ' '.join(map(lambda x: '%7.3f'%x, elap[:,0])), \
-            '%7.3f' % np.nanmean(elap[:,0]), '%7.3f' % np.nanstd(elap[:,0], ddof=1), \
-            '%7.3f' % np.nanpercentile(elap[:,0], 25), '%7.3f' % np.nanpercentile(elap[:,0], 75)
+        print '%7s' % 'Time', ' '.join(map(lambda x: '%7.3f'%x, np.nanmean(elap[:,::npe], 1))), \
+            '%7.3f' % np.nanmean(elap[:,::npe]), '%7.3f' % np.nanstd(elap[:,::npe], ddof=1), \
+            '%7.3f' % np.nanpercentile(elap[:,::npe], 25), '%7.3f' % np.nanpercentile(elap[:,::npe], 75)
         print '%7s' % 'AVG', ' '.join(map(lambda x: '%7.3f'%x, np.nanmean(elap, 1))), \
-            '%7.3f' % np.nanmean(elap[:,:]), '%7.3f' % np.nanstd(elap[:,:], ddof=1), \
-            '%7.3f' % np.nanpercentile(elap[:,:], 25), '%7.3f' % np.nanpercentile(elap[:,:], 75), '%7.3f' % np.nanpercentile(elap[:,:], 50) 
+            '%7.3f' % np.nanmean(elap), '%7.3f' % np.nanstd(elap, ddof=1), \
+            '%7.3f' % np.nanpercentile(elap, 25), '%7.3f' % np.nanpercentile(elap, 75), '%7.3f' % np.nanpercentile(elap, 50)
         print '%7s' % 'STD', ' '.join(map(lambda x: '%7.3f'%x, np.nanstd(elap, 1, ddof=1)))
         print '%7s' % 'MIN', ' '.join(map(lambda x: '%7.3f'%x, np.nanmin(elap, 1)))
         print '%7s' % 'MAX', ' '.join(map(lambda x: '%7.3f'%x, np.nanmax(elap, 1)))
-
 
 if args.save:
     import matplotlib as mpl
