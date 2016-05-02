@@ -32,8 +32,10 @@ def reject_IQR_outlier(x):
     out1 = IQR[1] + 1.5 * (IQR[1]-IQR[0])
     out0 = IQR[0] - 1.5 * (IQR[1]-IQR[0])
 
+    cnt0 = np.count_nonzero(np.isnan(x))
     x = np.where(np.logical_and(x >= out0, x <= out1), x, np.nan)
-    return x
+    cnt1 = np.count_nonzero(np.isnan(x)) - cnt0
+    return x, cnt1
 
 def get_timinglines(fname, tindex=4):
     selected = []
@@ -111,8 +113,8 @@ if not args.nosummary:
     nsteps = elap.shape[0]
     if args.remove_outlier:
         ##len(x[np.where(np.isnan(x))])
-        elap = reject_IQR_outlier(elap)
-        print 'Outliers are removed (method: IQR)'
+        elap, cnt = reject_IQR_outlier(elap)
+        print 'Outliers are removed (method: IQR): %d (%.1f %%)' % (cnt, float(cnt)/elap.size)
 
     if args.byrow:
         print '%9s %9s %9s %9s %9s %9s' % ('SEQ', 'Time(s)', 'AVG', 'STD', 'MIN', 'MAX')
@@ -139,7 +141,7 @@ if not args.nosummary:
             '%7.3f' % np.nanpercentile(elap[:,::npe], 25), '%7.3f' % np.nanpercentile(elap[:,::npe], 75)
         print '%7s' % 'AVG', ' '.join(map(lambda x: '%7.3f'%x, np.nanmean(elap, 1))), \
             '%7.3f' % np.nanmean(elap), '%7.3f' % np.nanstd(elap, ddof=1), \
-            '%7.3f' % np.nanpercentile(elap, 25), '%7.3f' % np.nanpercentile(elap, 75), '%7.3f' % np.nanpercentile(elap, 50)
+            '%7.3f' % np.nanpercentile(elap, 25), '%7.3f' % np.nanpercentile(elap, 75)
         print '%7s' % 'STD', ' '.join(map(lambda x: '%7.3f'%x, np.nanstd(elap, 1, ddof=1)))
         print '%7s' % 'MIN', ' '.join(map(lambda x: '%7.3f'%x, np.nanmin(elap, 1)))
         print '%7s' % 'MAX', ' '.join(map(lambda x: '%7.3f'%x, np.nanmax(elap, 1)))
