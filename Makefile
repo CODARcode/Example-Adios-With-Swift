@@ -15,6 +15,11 @@ else
   SYSTEMS := $(shell hostname)
 endif
 
+ifneq (,$(findstring titan, $(SYSTEMS)))
+  CC = cc
+  CXX = CC
+endif
+
 ifneq (,$(findstring cori, $(SYSTEMS)))
   CC = cc
   CXX = CC
