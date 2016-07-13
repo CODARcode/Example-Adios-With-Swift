@@ -107,10 +107,10 @@ void do_define(const char* adios_write_method, const char* initstr)
 }
 
 void do_write(const char* fname, const char* amode,
-           uint64_t NX, uint64_t NY, const ATYPE *t,
-           uint64_t G, uint64_t O,
-           MPI_Comm comm,
-           uint64_t *groupsize, double *t0, double *elap)
+              uint64_t NX, uint64_t NY, const ATYPE *t,
+              uint64_t G, uint64_t O,
+              MPI_Comm comm,
+              uint64_t *groupsize, double *t0, double *elap)
 {
     int64_t     m_adios_file;
     uint64_t    adios_groupsize, adios_totalsize;
@@ -269,8 +269,8 @@ int main (int argc, char ** argv)
     string rparam = string(args_info.rparam_arg);
     string prefix = string(args_info.prefix_arg);
 
-    if (adios_write_method == "ICEE")
     {
+        // common routine to set init string
         s << "verbose=" << args_info.verbose_arg << ";";
 
         if (args_info.host_given)
@@ -300,8 +300,16 @@ int main (int argc, char ** argv)
 
         if (args_info.attrlist_given)
             s << "attr_list=" << args_info.attrlist_arg << ";";
+    }
 
+    if (adios_write_method == "ICEE")
+    {
         wparam = wparam + ";" + s.str();
+    }
+
+    if (adios_read_method == ADIOS_READ_METHOD_ICEE)
+    {
+        rparam = rparam + ";" + s.str();
     }
 
     setlocale(LC_NUMERIC, "en_US.UTF-8");
@@ -535,7 +543,7 @@ int main (int argc, char ** argv)
                 double t_elap[3];
                 MPI_Barrier(MPI_COMM_WORLD);
                 do_write_1var(fname_save.c_str(), amode.c_str(), vname/*f->var_namelist[v->varid]*/,
-                      NX, NY, data, G, O, comm, &adios_groupsize, &t0, t_elap);
+                              NX, NY, data, G, O, comm, &adios_groupsize, &t0, t_elap);
 
                 if (it==0 && rank==0)
                 {
