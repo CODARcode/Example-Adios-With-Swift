@@ -494,8 +494,6 @@ int main (int argc, char ** argv)
                 sel = adios_selection_boundingbox (v->ndim, start, count);
                 adios_schedule_read_byid (f, sel, v->varid, 0, 1, data);
                 adios_perform_reads (f, 1); // blocking: non-zero, return only when all reads are completed. If zero, return immediately
-
-
                 adios_release_step (f);
 
                 //MPI_Barrier(comm);
