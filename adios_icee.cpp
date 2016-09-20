@@ -475,7 +475,7 @@ int main (int argc, char ** argv)
                 NX = args_info.len_arg;
             }
             
-            adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, ((NVAR * NX * NY * sizeof(ATYPE))>>20) + 1L);
+            //adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, ((NVAR * NX * NY * sizeof(ATYPE))>>20) + 1L);
             
             if (rank==0)
             {
