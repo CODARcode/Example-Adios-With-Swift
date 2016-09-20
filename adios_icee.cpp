@@ -41,6 +41,7 @@ using namespace std;
 #define stringfy(s) #s
 
 #define NVAR 1
+#define SLEEP_SEC 3600
 
 #include <sys/time.h>
 struct timeval adios_timer_tp;
@@ -390,7 +391,7 @@ int main (int argc, char ** argv)
                     printf("    %14s %5s %5s %9s %9s %9s %9s %9s %9s\n", "--------", "-----", "-----", "---------", "---------", "---------", "---------", "---------", "---------");
                 }
                 MPI_Barrier(comm);
-                sleep_with_interval((double)interval_sec, 100);
+                sleep_with_interval((double)interval_sec, SLEEP_SEC);
                 
                 printf(">>> %14.03f %5d %5d %9.03e %9.03f %9.03e %9.03f %9.03e %9.03f\n",
                        t0, it, rank,
@@ -579,7 +580,7 @@ int main (int argc, char ** argv)
                 
                 if (it==nstep-1) break;
                 
-                sleep_with_interval((double)interval_sec, 100);
+                sleep_with_interval((double)interval_sec, SLEEP_SEC);
                 
                 // advance to 1) next available step with 2) blocking wait
                 adios_advance_step (f, 0, timeout_sec);
