@@ -96,6 +96,15 @@ struct icee_args_info
   const char *evilread_help; /**< @brief enable evil read help description.  */
   int commself_flag;	/**< @brief commself (default=off).  */
   const char *commself_help; /**< @brief commself help description.  */
+  int all_flag;	/**< @brief Runs all sizes, up to `length' (default=off).  */
+  const char *all_help; /**< @brief Runs all sizes, up to `length' help description.  */
+  #if defined(HAVE_LONG_LONG) || defined(HAVE_LONG_LONG_INT)
+  long long int minlen_arg;	/**< @brief minlen (default=1).  */
+  #else
+  long minlen_arg;	/**< @brief minlen (default=1).  */
+  #endif
+  char * minlen_orig;	/**< @brief minlen original value given at command line.  */
+  const char *minlen_help; /**< @brief minlen help description.  */
   char * host_arg;	/**< @brief local hostname (default='localhost').  */
   char * host_orig;	/**< @brief local hostname original value given at command line.  */
   const char *host_help; /**< @brief local hostname help description.  */
@@ -150,6 +159,8 @@ struct icee_args_info
   unsigned int filelock_given ;	/**< @brief Whether filelock was given.  */
   unsigned int evilread_given ;	/**< @brief Whether evilread was given.  */
   unsigned int commself_given ;	/**< @brief Whether commself was given.  */
+  unsigned int all_given ;	/**< @brief Whether all was given.  */
+  unsigned int minlen_given ;	/**< @brief Whether minlen was given.  */
   unsigned int host_given ;	/**< @brief Whether host was given.  */
   unsigned int port_given ;	/**< @brief Whether port was given.  */
   unsigned int remotehost_given ;	/**< @brief Whether remotehost was given.  */

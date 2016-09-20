@@ -21,6 +21,8 @@ option "mpicolor" - "MPI comm color" int optional default="0"
 option "filelock" - "filelock name" string optional multiple(2) 
 option "evilread" - "enable evil read" flag off
 option "commself" - "commself" flag off
+option "all" - "Runs all sizes, up to `length'" flag off
+option "minlen" - "minlen" longlong optional default="1"
 
 option "host" - "local hostname" string optional default="localhost"
 option "port" p "local port" int optional default="59900"
