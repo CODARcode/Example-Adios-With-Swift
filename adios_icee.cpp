@@ -450,153 +450,181 @@ int main (int argc, char ** argv)
         }
         else
         {
-            // Recover G from the metadata and compute NX and NY
-            char vname[32];
-            sprintf(vname, "var%02d", rand()%NVAR);
-            v = adios_inq_var (f, vname);
-            
-            G = v->dims[0];
-            NX = G/size;
-            NY = v->dims[1];
-            O = rank * NX;
-            
-            start[0] = rank * NX;
-            count[0] = NX;
-            start[1] = 0;
-            count[1] = NY;
-            
-            if (rank == size-1)
+            while (1)
             {
-                NX = G - rank * NX;
+                // Recover G from the metadata and compute NX and NY
+                char vname[32];
+                sprintf(vname, "var%02d", rand()%NVAR);
+                v = adios_inq_var (f, vname);
+                
+                G = v->dims[0];
+                NX = G/size;
+                NY = v->dims[1];
+                O = rank * NX;
+                
+                start[0] = rank * NX;
                 count[0] = NX;
-            }
-            
-            if (args_info.evilread_flag)
-            {
-                NX = args_info.len_arg;
-            }
-            
-            //adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, ((NVAR * NX * NY * sizeof(ATYPE))>>20) + 1L);
-            
-            if (rank==0)
-            {
-                printf("===== SUMMARY =====\n");
-                printf("%10s : %s\n", "Method", args_info.readmethod_arg);
-                printf("%10s : %s\n", "Params", rparam.c_str());
-                printf("%10s : %'d (seconds)\n", "Interval", interval_sec);
-                printf("%10s : %'d\n", "PEs", size);
-                printf("%10s : %'llu x %'llu\n", "Dims", G, NY);
-                printf("%10s : %'llu x %'llu\n", "Local dims", NX, NY);
-                printf("%10s : %'d\n", "Steps", nstep);
-                printf("%10s : %s\n", "WMethod", adios_write_method.c_str());
-                printf("%10s : %s\n", "WParams", wparam.c_str());
-                printf("===================\n\n");
-            }
-            
-            data = (ATYPE *) malloc (NX * NY * sizeof(ATYPE));
-            assert(data != NULL);
-            
-            if (rank==0)
-            {
-                printf("%3s %14s %5s %5s %9s %9s %s\n", "+++", "timestep",   "seq",  "rank", "time(sec)",   "(MiB/s)", "check");
-                printf("%3s %14s %5s %5s %9s %9s %s\n", "+++", "--------", "-----", "-----", "---------", "---------", "-----");
-            }
-            
-            /* Processing loop over the steps (we are already in the first one) */
-            //while (adios_errno != err_end_of_stream) {
-            for (int it =0; it < nstep; it++)
-            {
-                /*
-                 * Evil read
-                 * -. Continuously read with random offsets
-                 * -. NX is set by len argument
-                 */
-            EVIL:
-                if (args_info.evilread_flag)
+                start[1] = 0;
+                count[1] = NY;
+                
+                if (rank == size-1)
                 {
-                    O = rand()%(G - NX);
-                    start[0] = O;
+                    NX = G - rank * NX;
                     count[0] = NX;
                 }
                 
-                //MPI_Barrier(comm);
-                double t0 = MPI_Wtime();
-                
-                sel = adios_selection_boundingbox (v->ndim, start, count);
-                adios_schedule_read_byid (f, sel, v->varid, 0, 1, data);
-                adios_perform_reads (f, 1); // blocking: non-zero, return only when all reads are completed. If zero, return immediately
-                adios_release_step (f);
-                
-                //MPI_Barrier(comm);
-                double t1 = MPI_Wtime();
-                double t10 = t1 - t0;
-                
-                double sum = 0.0;
-                for (uint64_t i = 0; i < NX * NY; i++)
-                {
-                    sum += (double) data[i];
-                }
-                
-                printf("+++ %14.03f %5d %5d %9.03e %9.03f %s %'.0f %'.0f\n",
-                       t0, f->current_step, rank, t10,
-                       (double)(NX*NY)*sizeof(ATYPE)/t10/1024.0/1024.0,
-                       vname/*f->var_namelist[v->varid]*/, sum, sum/NX/NY);
-                
                 if (args_info.evilread_flag)
                 {
-                    int vid = rand()%NVAR;
-                    //char vname[32];
-                    sprintf(vname, "var%02d", vid);
-                    v = adios_inq_var (f, vname);
-                    goto EVIL;
+                    NX = args_info.len_arg;
                 }
                 
-                // Save what is read
-                if (args_info.append_flag)
-                    amode = (it==0)? "w" : "a";
+                //adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, ((NVAR * NX * NY * sizeof(ATYPE))>>20) + 1L);
                 
-                if (use_lock && (rank == 0))
+                if (rank==0)
                 {
-                    lockup(lock[0].c_str());
-                    lockdown(lock[1].c_str());
+                    printf("===== SUMMARY =====\n");
+                    printf("%10s : %s\n", "Method", args_info.readmethod_arg);
+                    printf("%10s : %s\n", "Params", rparam.c_str());
+                    printf("%10s : %'d (seconds)\n", "Interval", interval_sec);
+                    printf("%10s : %'d\n", "PEs", size);
+                    printf("%10s : %'llu x %'llu\n", "Dims", G, NY);
+                    printf("%10s : %'llu x %'llu\n", "Local dims", NX, NY);
+                    printf("%10s : %'d\n", "Steps", nstep);
+                    printf("%10s : %s\n", "WMethod", adios_write_method.c_str());
+                    printf("%10s : %s\n", "WParams", wparam.c_str());
+                    printf("===================\n\n");
                 }
                 
-                double t_elap[3];
-                MPI_Barrier(MPI_COMM_WORLD);
-                do_write_1var(fname_save.c_str(), amode.c_str(), vname/*f->var_namelist[v->varid]*/,
-                              NX, NY, data, G, O, comm, &adios_groupsize, &t0, t_elap);
+                data = (ATYPE *) malloc (NX * NY * sizeof(ATYPE));
+                assert(data != NULL);
                 
-                if (it==0 && rank==0)
+                if (rank==0)
                 {
-                    printf("    %14s %5s %5s %9s %9s %9s %9s %9s %9s\n", "timestep",   "seq",  "rank",   "t1(sec)",   "(MiB/s)",   "t2(sec)",   "(MiB/s)",   "t3(sec)",   "(MiB/s)");
-                    printf("    %14s %5s %5s %9s %9s %9s %9s %9s %9s\n", "--------", "-----", "-----", "---------", "---------", "---------", "---------", "---------", "---------");
+                    printf("%3s %14s %5s %5s %9s %9s %s\n", "+++", "timestep",   "seq",  "rank", "time(sec)",   "(MiB/s)", "check");
+                    printf("%3s %14s %5s %5s %9s %9s %s\n", "+++", "--------", "-----", "-----", "---------", "---------", "-----");
                 }
                 
-                printf(">>> %14.03f %5d %5d %9.03e %9.03f %9.03e %9.03f %9.03e %9.03f\n",
-                       t0, f->current_step, rank,
-                       t_elap[0], (double)adios_groupsize/t_elap[0]/1024.0/1024.0,
-                       t_elap[1], (double)adios_groupsize/t_elap[1]/1024.0/1024.0,
-                       t_elap[2], (double)adios_groupsize/t_elap[2]/1024.0/1024.0);
-                
-                if (it==nstep-1) break;
-                
-                sleep_with_interval((double)interval_sec, SLEEP_SEC);
-                
-                // advance to 1) next available step with 2) blocking wait
-                adios_advance_step (f, 0, timeout_sec);
-                if (adios_errno == err_step_notready)
+                /* Processing loop over the steps (we are already in the first one) */
+                //while (adios_errno != err_end_of_stream) {
+                for (int it =0; it < nstep; it++)
                 {
-                    printf ("rank %d: No new step arrived within the timeout. Quit. %s\n",
-                            rank, adios_errmsg());
-                    break; // quit while loop
+                    /*
+                     * Evil read
+                     * -. Continuously read with random offsets
+                     * -. NX is set by len argument
+                     */
+                EVIL:
+                    if (args_info.evilread_flag)
+                    {
+                        O = rand()%(G - NX);
+                        start[0] = O;
+                        count[0] = NX;
+                    }
+                    
+                    //MPI_Barrier(comm);
+                    double t0 = MPI_Wtime();
+                    
+                    sel = adios_selection_boundingbox (v->ndim, start, count);
+                    adios_schedule_read_byid (f, sel, v->varid, 0, 1, data);
+                    adios_perform_reads (f, 1); // blocking: non-zero, return only when all reads are completed. If zero, return immediately
+                    adios_release_step (f);
+                    
+                    //MPI_Barrier(comm);
+                    double t1 = MPI_Wtime();
+                    double t10 = t1 - t0;
+                    
+                    double sum = 0.0;
+                    for (uint64_t i = 0; i < NX * NY; i++)
+                    {
+                        sum += (double) data[i];
+                    }
+                    
+                    printf("+++ %14.03f %5d %5d %9.03e %9.03f %s %'.0f %'.0f\n",
+                           t0, f->current_step, rank, t10,
+                           (double)(NX*NY)*sizeof(ATYPE)/t10/1024.0/1024.0,
+                           vname/*f->var_namelist[v->varid]*/, sum, sum/NX/NY);
+                    
+                    if (args_info.evilread_flag)
+                    {
+                        int vid = rand()%NVAR;
+                        //char vname[32];
+                        sprintf(vname, "var%02d", vid);
+                        v = adios_inq_var (f, vname);
+                        goto EVIL;
+                    }
+                    
+                    // Save what is read
+                    if (args_info.append_flag)
+                        amode = (it==0)? "w" : "a";
+                    
+                    if (use_lock && (rank == 0))
+                    {
+                        lockup(lock[0].c_str());
+                        lockdown(lock[1].c_str());
+                    }
+                    
+                    double t_elap[3];
+                    MPI_Barrier(MPI_COMM_WORLD);
+                    do_write_1var(fname_save.c_str(), amode.c_str(), vname/*f->var_namelist[v->varid]*/,
+                                  NX, NY, data, G, O, comm, &adios_groupsize, &t0, t_elap);
+                    
+                    if (it==0 && rank==0)
+                    {
+                        printf("    %14s %5s %5s %9s %9s %9s %9s %9s %9s\n", "timestep",   "seq",  "rank",   "t1(sec)",   "(MiB/s)",   "t2(sec)",   "(MiB/s)",   "t3(sec)",   "(MiB/s)");
+                        printf("    %14s %5s %5s %9s %9s %9s %9s %9s %9s\n", "--------", "-----", "-----", "---------", "---------", "---------", "---------", "---------", "---------");
+                    }
+                    
+                    printf(">>> %14.03f %5d %5d %9.03e %9.03f %9.03e %9.03f %9.03e %9.03f\n",
+                           t0, f->current_step, rank,
+                           t_elap[0], (double)adios_groupsize/t_elap[0]/1024.0/1024.0,
+                           t_elap[1], (double)adios_groupsize/t_elap[1]/1024.0/1024.0,
+                           t_elap[2], (double)adios_groupsize/t_elap[2]/1024.0/1024.0);
+                    
+                    if (it==nstep-1) break;
+                    
+                    sleep_with_interval((double)interval_sec, SLEEP_SEC);
+                    
+                    // advance to 1) next available step with 2) blocking wait
+                    adios_advance_step (f, 0, timeout_sec);
+                    if (adios_errno == err_step_notready)
+                    {
+                        printf ("rank %d: No new step arrived within the timeout. Quit. %s\n",
+                                rank, adios_errmsg());
+                        break; // quit while loop
+                    }
+                    
+                    if (adios_errno == err_end_of_stream)
+                    {
+                        printf ("rank %d: End of stream. Quit. %s\n",
+                                rank, adios_errmsg());
+                        break; // quit while loop
+                    }
                 }
-                
-                if (adios_errno == err_end_of_stream)
+                if (args_info.all_flag && (NX>minlen))
                 {
-                    printf ("rank %d: End of stream. Quit. %s\n",
-                            rank, adios_errmsg());
-                    break; // quit while loop
+                    printf ("Waiting next ... (NX=%lld)\n", NX);
+                    
+                    sleep_with_interval((double)interval_sec, SLEEP_SEC);
+                    
+                    // advance to 1) next available step with 2) blocking wait
+                    adios_advance_step (f, 0, timeout_sec);
+                    if (adios_errno == err_step_notready)
+                    {
+                        printf ("rank %d: No new step arrived within the timeout. Quit. %s\n",
+                                rank, adios_errmsg());
+                        break; // quit while loop
+                    }
+                    
+                    if (adios_errno == err_end_of_stream)
+                    {
+                        printf ("rank %d: End of stream. Quit. %s\n",
+                                rank, adios_errmsg());
+                        break; // quit while loop
+                    }
+                    
                 }
+                else
+                    break;
             }
             
             adios_read_close (f);
