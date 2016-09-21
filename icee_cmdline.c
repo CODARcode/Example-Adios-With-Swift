@@ -41,7 +41,7 @@ const char *icee_args_info_help[] = {
   "  -r, --readmethod=STRING   ADIOS read method  (default=`BP')",
   "  -n, --len=LONGLONG        array length  (default=`1')",
   "      --chunk=LONGLONG      chunk length  (default=`131072')",
-  "      --timeout=FLOAT       Timeout  (default=`10.0')",
+  "      --timeout=FLOAT       Timeout  (default=`3600')",
   "      --sleep=INT           interval time  (default=`5')",
   "      --nstep=INT           number of time steps  (default=`10')",
   "      --wparam=STRING       write method params  (default=`')",
@@ -144,7 +144,7 @@ void clear_args (struct icee_args_info *args_info)
   args_info->len_orig = NULL;
   args_info->chunk_arg = 131072;
   args_info->chunk_orig = NULL;
-  args_info->timeout_arg = 10.0;
+  args_info->timeout_arg = 3600;
   args_info->timeout_orig = NULL;
   args_info->sleep_arg = 5;
   args_info->sleep_orig = NULL;
@@ -1312,7 +1312,7 @@ icee_cmdline_parser_internal (
           
             if (update_arg( (void *)&(args_info->timeout_arg), 
                  &(args_info->timeout_orig), &(args_info->timeout_given),
-                &(local_args_info.timeout_given), optarg, 0, "10.0", ARG_FLOAT,
+                &(local_args_info.timeout_given), optarg, 0, "3600", ARG_FLOAT,
                 check_ambiguity, override, 0, 0,
                 "timeout", '-',
                 additional_error))

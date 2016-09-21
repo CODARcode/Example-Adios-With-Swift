@@ -61,7 +61,7 @@ struct icee_args_info
   #endif
   char * chunk_orig;	/**< @brief chunk length original value given at command line.  */
   const char *chunk_help; /**< @brief chunk length help description.  */
-  float timeout_arg;	/**< @brief Timeout (default='10.0').  */
+  float timeout_arg;	/**< @brief Timeout (default='3600').  */
   char * timeout_orig;	/**< @brief Timeout original value given at command line.  */
   const char *timeout_help; /**< @brief Timeout help description.  */
   int sleep_arg;	/**< @brief interval time (default='5').  */
