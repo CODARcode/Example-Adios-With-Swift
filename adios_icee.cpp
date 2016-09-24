@@ -245,19 +245,23 @@ int main (int argc, char ** argv)
     int seed = time(NULL);
     srand(seed);
     
-    int         world_rank, world_size;
-    int         rank, size;
+    int world_rank, world_size;
+    int rank, size, name_len;
+    char processor_name[MPI_MAX_PROCESSOR_NAME];
     MPI_Comm    comm;
     
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+    MPI_Get_processor_name(processor_name, &name_len);
     
     MPI_Comm_split(MPI_COMM_WORLD, args_info.mpicolor_arg, world_rank, &comm);
     MPI_Comm_rank(comm, &rank);
     MPI_Comm_size(comm, &size);
     
-    printf("world size, rank=%d, %d, comm size, rank = %d, %d\n", world_size, world_rank, size, rank);
+    printf("name, world size and rank, comm size and comm rank = %s %d %d %d %d\n",
+           processor_name, world_size, world_rank, size, rank);
+    MPI_Barrier(MPI_COMM_WORLD);
     
     typedef enum {SERVER, CLIENT} mode_t;
     mode_t mode = SERVER;
@@ -339,8 +343,8 @@ int main (int argc, char ** argv)
             ATYPE        *t = (ATYPE *) malloc(NX * NY * sizeof(ATYPE));
             assert(t != NULL);
             
-            adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, ((NVAR * NX * NY * sizeof(ATYPE))>>20) + 1L);
-            //adios_set_max_buffer_size (((NX * NY * sizeof(ATYPE))>>20) + 1L);
+            //adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, ((NVAR * NX * NY * sizeof(ATYPE))>>20) + 1L);
+            adios_set_max_buffer_size (((NX * NY * sizeof(ATYPE))>>20) + 1L);
             
             G = NX * size;
             O = rank * NX;
@@ -404,13 +408,12 @@ int main (int argc, char ** argv)
                 MPI_Allreduce(MPI_IN_PLACE, &t_elap, 3, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
                 if (rank==0)
                 {
-                    printf(">>> %14s %5d %5d %9.03e %9.03f %9.03e %9.03f %9.03e %9.03f\n",
-                           "SUMMARY", it, rank,
+                    printf("SUM %14.03f %5d %5d %9.03e %9.03f %9.03e %9.03f %9.03e %9.03f\n",
+                           t0, it, rank,
                            t_elap[0], (double)adios_groupsize/t_elap[0]/1024.0/1024.0,
                            t_elap[1], (double)adios_groupsize/t_elap[1]/1024.0/1024.0,
                            t_elap[2], (double)adios_groupsize/t_elap[2]/1024.0/1024.0);
                 }
-                
             }
             NX = NX/2;
         }
@@ -539,10 +542,20 @@ int main (int argc, char ** argv)
                         sum += (double) data[i];
                     }
                     
+                    adios_groupsize = (NX*NY)*sizeof(ATYPE);
                     printf("+++ %14.03f %5d %5d %9.03e %9.03f %s %'.0f %'.0f\n",
                            t0, f->current_step, rank, t10,
-                           (double)(NX*NY)*sizeof(ATYPE)/t10/1024.0/1024.0,
+                           (double)adios_groupsize/t10/1024.0/1024.0,
                            vname/*f->var_namelist[v->varid]*/, sum, sum/NX/NY);
+                    
+                    MPI_Allreduce(MPI_IN_PLACE, &adios_groupsize, 1, MPI_LONG, MPI_SUM, MPI_COMM_WORLD);
+                    MPI_Allreduce(MPI_IN_PLACE, &t10, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+                    if (rank==0)
+                    {
+                        printf("SUM %14.03f %5d %5d %9.03e %9.03f\n",
+                               t0, f->current_step, rank, t10,
+                               (double)adios_groupsize/t10/1024.0/1024.0);
+                    }
                     
                     if (args_info.evilread_flag)
                     {
