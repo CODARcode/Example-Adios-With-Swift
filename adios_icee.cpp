@@ -259,8 +259,8 @@ int main (int argc, char ** argv)
     MPI_Comm_rank(comm, &rank);
     MPI_Comm_size(comm, &size);
     
-    printf("name, world size and rank, comm size and comm rank = %s %d %d %d %d\n",
-           processor_name, world_size, world_rank, size, rank);
+    printf("world size and rank, comm size and comm rank, name = %d %d %d %d %s\n",
+           world_size, world_rank, size, rank, processor_name);
     MPI_Barrier(MPI_COMM_WORLD);
     
     typedef enum {SERVER, CLIENT} mode_t;
