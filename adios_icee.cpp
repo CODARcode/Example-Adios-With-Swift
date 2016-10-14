@@ -78,7 +78,11 @@ void do_define(const char* adios_write_method, const char* initstr)
     int64_t       m_adios_group;
     
     // adios_flag_no to turn off statics
-    adios_declare_group (&m_adios_group, "restart", "", adios_stat_no/*adios_flag_no*/);
+#if ADIOS_VERSION_LE(1, 10, 0)
+    adios_declare_group (&m_adios_group, "restart", "", adios_flag_no);
+#else
+    adios_declare_group (&m_adios_group, "restart", "", adios_stat_no);
+#endif
     adios_select_method (m_adios_group, adios_write_method, initstr, "");
     
     adios_define_var (m_adios_group, "NX",
@@ -105,14 +109,31 @@ void do_define(const char* adios_write_method, const char* initstr)
                           "", ADIOS_ATYPE,
                           "NX,NY", "G,NY", "O,0");
     }
+    
+    adios_define_var (m_adios_group, "size",
+                      "", adios_integer,
+                      0, 0, 0);
+    
+    adios_define_var (m_adios_group, "rank",
+                      "", adios_integer,
+                      0, 0, 0);
+    
+    adios_define_var (m_adios_group, "timestamp",
+                      "", adios_double,
+                      "1", "size", "rank");
 }
 
 void do_write(const char* fname, const char* amode,
               uint64_t NX, uint64_t NY, const ATYPE *t,
               uint64_t G, uint64_t O,
+              MPI_Comm world_comm,
               MPI_Comm comm,
               uint64_t *groupsize, double *t0, double *elap)
 {
+    int size, rank;
+    MPI_Comm_rank(world_comm, &rank);
+    MPI_Comm_size(world_comm, &size);
+    
     int64_t     m_adios_file;
     uint64_t    adios_groupsize, adios_totalsize;
     
@@ -131,8 +152,16 @@ void do_write(const char* fname, const char* amode,
     {
         char vname[32];
         sprintf(vname, "var%02d", i);
-        adios_write(m_adios_file, vname, t);
+        if (NX==0)
+            adios_write(m_adios_file, vname, NULL);
+        else
+            adios_write(m_adios_file, vname, t);
     }
+    
+    adios_write(m_adios_file, "size", (void *) &size);
+    adios_write(m_adios_file, "rank", (void *) &rank);
+    adios_write(m_adios_file, "timestamp", (void *) &t1);
+    
     double t3 = MPI_Wtime();
     adios_close (m_adios_file);
     double t4 = MPI_Wtime();
@@ -207,6 +236,7 @@ int main (int argc, char ** argv)
     uint64_t minlen = NX;
     if (args_info.all_flag)
         minlen = args_info.minlen_arg;
+    uint64_t NX_copy = args_info.len_arg;
     
     float timeout_sec = args_info.timeout_arg;
     int   interval_sec = args_info.sleep_arg;
@@ -338,13 +368,19 @@ int main (int argc, char ** argv)
     
     if (mode == SERVER)
     {
+        if (args_info.probe_flag)
+        {
+            NX_copy = NX;
+            NX = 0;
+            minlen = 0;
+        }
         while (NX >= minlen)
         {
             ATYPE        *t = (ATYPE *) malloc(NX * NY * sizeof(ATYPE));
             assert(t != NULL);
             
             //adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, ((NVAR * NX * NY * sizeof(ATYPE))>>20) + 1L);
-            adios_set_max_buffer_size (((NX * NY * sizeof(ATYPE))>>20) + 1L);
+            adios_set_max_buffer_size (((NX * NY * sizeof(ATYPE) + 64)>>20) + 1L);
             
             G = NX * size;
             O = rank * NX;
@@ -381,9 +417,9 @@ int main (int argc, char ** argv)
                 double t0, t_elap[3];
                 MPI_Barrier(MPI_COMM_WORLD);
                 if (args_info.commself_flag)
-                    do_write(fname.c_str(), amode.c_str(), NX, NY, t, G, O, MPI_COMM_SELF, &adios_groupsize, &t0, t_elap);
+                    do_write(fname.c_str(), amode.c_str(), NX, NY, t, G, O, MPI_COMM_WORLD, MPI_COMM_SELF, &adios_groupsize, &t0, t_elap);
                 else
-                    do_write(fname.c_str(), amode.c_str(), NX, NY, t, G, O, comm, &adios_groupsize, &t0, t_elap);
+                    do_write(fname.c_str(), amode.c_str(), NX, NY, t, G, O, MPI_COMM_WORLD, comm, &adios_groupsize, &t0, t_elap);
                 
                 //ltime=time(NULL);
                 //timetext = asctime(localtime(&ltime));
@@ -403,7 +439,6 @@ int main (int argc, char ** argv)
                        t_elap[1], (double)adios_groupsize/t_elap[1]/1024.0/1024.0,
                        t_elap[2], (double)adios_groupsize/t_elap[2]/1024.0/1024.0);
                 
-                
                 MPI_Allreduce(MPI_IN_PLACE, &adios_groupsize, 1, MPI_LONG, MPI_SUM, MPI_COMM_WORLD);
                 MPI_Allreduce(MPI_IN_PLACE, &t_elap, 3, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
                 if (rank==0)
@@ -415,7 +450,19 @@ int main (int argc, char ** argv)
                            t_elap[2], (double)adios_groupsize/t_elap[2]/1024.0/1024.0);
                 }
             }
-            NX = NX/2;
+
+            if (args_info.probe_flag)
+            {
+                NX = NX_copy;
+                minlen = NX;
+                if (args_info.all_flag)
+                    minlen = args_info.minlen_arg;
+                args_info.probe_flag = false;
+            }
+            else
+            {
+                NX = NX/2;
+            }
         }
         adios_finalize (rank);
     }
@@ -424,10 +471,16 @@ int main (int argc, char ** argv)
         ADIOS_FILE * f;
         ADIOS_VARINFO * v;
         ADIOS_SELECTION * sel;
+        ADIOS_SELECTION * sel1;
         int err;
         
         ATYPE *data = NULL;
         uint64_t start[2], count[2];
+        
+        double timestamp = 0.0;
+        double deltat = 0.0;
+        double sum_deltat = 0.0;
+        uint64_t start1[2], count1[2];
         
         err = adios_read_init_method (adios_read_method, comm, rparam.c_str());
         if (err != 0)
@@ -459,10 +512,25 @@ int main (int argc, char ** argv)
                 char vname[32];
                 sprintf(vname, "var%02d", rand()%NVAR);
                 v = adios_inq_var (f, vname);
-                
-                G = v->dims[0];
-                NX = G/size;
-                NY = v->dims[1];
+                if (v != NULL)
+                {
+                    G = v->dims[0];
+                    NX = G/size;
+                    NY = v->dims[1];
+                }
+                else
+                {
+                    ADIOS_VARINFO *vg, *vy;
+                    vg = adios_inq_var (f, "G");
+                    vy = adios_inq_var (f, "NY");
+                    
+                    G = *(uint64_t*)vg->value;
+                    NX = G/size;
+                    NY = *(uint64_t*)vy->value;
+                    
+                    adios_free_varinfo(vg);
+                    adios_free_varinfo(vy);
+                }
                 O = rank * NX;
                 
                 start[0] = rank * NX;
@@ -475,6 +543,9 @@ int main (int argc, char ** argv)
                     NX = G - rank * NX;
                     count[0] = NX;
                 }
+                
+                start1[0] = rank;
+                count1[0] = 1;
                 
                 if (args_info.evilread_flag)
                 {
@@ -503,8 +574,8 @@ int main (int argc, char ** argv)
                 
                 if (rank==0)
                 {
-                    printf("%3s %14s %5s %5s %9s %9s %s\n", "+++", "timestep",   "seq",  "rank", "time(sec)",   "(MiB/s)", "check");
-                    printf("%3s %14s %5s %5s %9s %9s %s\n", "+++", "--------", "-----", "-----", "---------", "---------", "-----");
+                    printf("%3s %14s %5s %5s %9s %9s %9s %9s %9s %9s\n", "+++", "timestep",   "seq",  "rank", "time(sec)",   "(MiB/s)", "dT", "Check", "", "");
+                    printf("%3s %14s %5s %5s %9s %9s %9s %9s %9s %9s\n", "+++", "--------", "-----", "-----", "---------", "---------", "---------", "---------", "---------", "---------");
                 }
                 
                 /* Processing loop over the steps (we are already in the first one) */
@@ -523,18 +594,23 @@ int main (int argc, char ** argv)
                         start[0] = O;
                         count[0] = NX;
                     }
+                    if (NX>0) sel = adios_selection_boundingbox (v->ndim, start, count);
+                    sel1 = adios_selection_boundingbox (1, start1, count1);
                     
                     //MPI_Barrier(comm);
                     double t0 = MPI_Wtime();
                     
-                    sel = adios_selection_boundingbox (v->ndim, start, count);
-                    adios_schedule_read_byid (f, sel, v->varid, 0, 1, data);
-                    adios_perform_reads (f, 1); // blocking: non-zero, return only when all reads are completed. If zero, return immediately
-                    adios_release_step (f);
+                    if (NX>0) adios_schedule_read_byid (f, sel, v->varid, 0, 1, data);
+                    adios_schedule_read (f, sel1, "timestamp", 0, 1, &timestamp);
+                    adios_perform_reads (f, 1);
                     
                     //MPI_Barrier(comm);
                     double t1 = MPI_Wtime();
                     double t10 = t1 - t0;
+                    
+                    adios_release_step (f);
+                    if (NX>0) adios_selection_delete(sel);
+                    adios_selection_delete(sel1);
                     
                     double sum = 0.0;
                     for (uint64_t i = 0; i < NX * NY; i++)
@@ -542,19 +618,31 @@ int main (int argc, char ** argv)
                         sum += (double) data[i];
                     }
                     
+                    if (NX==0)
+                    {
+                        deltat = t1 - timestamp;
+                        sum_deltat += deltat;
+                    }
+                    else
+                    {
+                        deltat = t1 - timestamp + sum_deltat/(double)nstep;
+                    }
+                    
                     adios_groupsize = (NX*NY)*sizeof(ATYPE);
-                    printf("+++ %14.03f %5d %5d %9.03e %9.03f %s %'.0f %'.0f\n",
+                    printf("+++ %14.03f %5d %5d %9.03e %9.03f %9.03e %9s %9.03e %9.03e\n",
                            t0, f->current_step, rank, t10,
-                           (double)adios_groupsize/t10/1024.0/1024.0,
+                           (double)adios_groupsize/t10/1024.0/1024.0, deltat,
                            vname/*f->var_namelist[v->varid]*/, sum, sum/NX/NY);
                     
                     MPI_Allreduce(MPI_IN_PLACE, &adios_groupsize, 1, MPI_LONG, MPI_SUM, MPI_COMM_WORLD);
                     MPI_Allreduce(MPI_IN_PLACE, &t10, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+                    MPI_Allreduce(MPI_IN_PLACE, &deltat, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
                     if (rank==0)
                     {
-                        printf("SUM %14.03f %5d %5d %9.03e %9.03f\n",
-                               t0, f->current_step, rank, t10,
-                               (double)adios_groupsize/t10/1024.0/1024.0);
+                        printf("SUM %14.03f %5d %5d %9.03e %9.03f %9.03e %9.03f\n",
+                               t0, f->current_step, rank,
+                               t10, (double)adios_groupsize/t10/1024.0/1024.0,
+                               deltat, (double)adios_groupsize/deltat/1024.0/1024.0);
                     }
                     
                     if (args_info.evilread_flag)
@@ -613,7 +701,8 @@ int main (int argc, char ** argv)
                         break; // quit while loop
                     }
                 }
-                if (args_info.all_flag && (NX>minlen))
+                
+                if ((args_info.all_flag && (NX>minlen)) || (args_info.probe_flag))
                 {
                     printf ("Waiting next ... (NX=%lld)\n", NX);
                     
@@ -634,6 +723,8 @@ int main (int argc, char ** argv)
                                 rank, adios_errmsg());
                         break; // quit while loop
                     }
+                    
+                    if (args_info.probe_flag) args_info.probe_flag = false;
                     
                 }
                 else
