@@ -229,6 +229,8 @@ int main (int argc, char ** argv)
     }
     
     string adios_write_method = "POSIX1";
+    if (args_info.client_flag) adios_write_method = "NULL";
+    
     enum ADIOS_READ_METHOD adios_read_method = ADIOS_READ_METHOD_BP;
     
     uint64_t NX = args_info.len_arg;
@@ -246,6 +248,7 @@ int main (int argc, char ** argv)
     
     if (args_info.writemethod_given)
         adios_write_method = string(args_info.writemethod_arg);
+    std::transform(adios_write_method.begin(), adios_write_method.end(), adios_write_method.begin(), ::toupper);
     
     if (args_info.readmethod_given)
     {
@@ -309,7 +312,8 @@ int main (int argc, char ** argv)
     
     {
         // common routine to set init string
-        s << "verbose=" << args_info.verbose_arg << ";";
+        if (args_info.verbose_given)
+            s << "verbose=" << args_info.verbose_arg << ";";
         
         if (args_info.host_given)
             s << "cm_host=" << args_info.host_arg << ";";
@@ -338,6 +342,9 @@ int main (int argc, char ** argv)
         
         if (args_info.attrlist_given)
             s << "attr_list=" << args_info.attrlist_arg << ";";
+        
+        if (args_info.probe_given)
+            s << "use_probe=" << args_info.probe_flag << ";";
     }
     
     if (adios_write_method == "ICEE")
@@ -480,6 +487,7 @@ int main (int argc, char ** argv)
         double timestamp = 0.0;
         double deltat = 0.0;
         double sum_deltat = 0.0;
+        int    cnt_deltat = 1;
         uint64_t start1[2], count1[2];
         
         err = adios_read_init_method (adios_read_method, comm, rparam.c_str());
@@ -574,8 +582,8 @@ int main (int argc, char ** argv)
                 
                 if (rank==0)
                 {
-                    printf("%3s %14s %5s %5s %9s %9s %9s %9s %9s %9s\n", "+++", "timestep",   "seq",  "rank", "time(sec)",   "(MiB/s)", "dT", "Check", "", "");
-                    printf("%3s %14s %5s %5s %9s %9s %9s %9s %9s %9s\n", "+++", "--------", "-----", "-----", "---------", "---------", "---------", "---------", "---------", "---------");
+                    printf("%3s %14s %5s %5s %9s %9s %9s %9s (%9s %9s %9s)\n", "+++", "timestep",   "seq",  "rank", "time(sec)",   "(MiB/s)", "dT", "(MiB/s)", "Check", "", "");
+                    printf("%3s %14s %5s %5s %9s %9s %9s %9s  %9s %9s %9s\n", "+++", "--------", "-----", "-----", "---------", "---------", "---------", "---------", "---------", "---------", "---------");
                 }
                 
                 /* Processing loop over the steps (we are already in the first one) */
@@ -622,17 +630,19 @@ int main (int argc, char ** argv)
                     {
                         deltat = t1 - timestamp;
                         sum_deltat += deltat;
+                        cnt_deltat++;
                     }
                     else
                     {
-                        deltat = t1 - timestamp + sum_deltat/(double)nstep;
+                        deltat = t1 - timestamp - sum_deltat/(double)cnt_deltat;
                     }
-                    
                     adios_groupsize = (NX*NY)*sizeof(ATYPE);
-                    printf("+++ %14.03f %5d %5d %9.03e %9.03f %9.03e %9s %9.03e %9.03e\n",
+                    printf("+++ %14.03f %5d %5d %9.03e %9.03f %9.03e %9.03f (%9s %9.03e %9.03e)\n",
                            t0, f->current_step, rank, t10,
-                           (double)adios_groupsize/t10/1024.0/1024.0, deltat,
+                           (double)adios_groupsize/t10/1024.0/1024.0,
+                           deltat, (double)adios_groupsize/deltat/1024.0/1024.0,
                            vname/*f->var_namelist[v->varid]*/, sum, sum/NX/NY);
+                    printf("%d: groupsize = %llu, %f %f\n", rank, adios_groupsize, (double)adios_groupsize/deltat, sum_deltat/(double)cnt_deltat);
                     
                     MPI_Allreduce(MPI_IN_PLACE, &adios_groupsize, 1, MPI_LONG, MPI_SUM, MPI_COMM_WORLD);
                     MPI_Allreduce(MPI_IN_PLACE, &t10, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
@@ -664,23 +674,25 @@ int main (int argc, char ** argv)
                         lockdown(lock[1].c_str());
                     }
                     
-                    double t_elap[3];
-                    MPI_Barrier(MPI_COMM_WORLD);
-                    do_write_1var(fname_save.c_str(), amode.c_str(), vname/*f->var_namelist[v->varid]*/,
-                                  NX, NY, data, G, O, comm, &adios_groupsize, &t0, t_elap);
-                    
-                    if (it==0 && rank==0)
+                    if (adios_write_method != "NULL")
                     {
-                        printf("    %14s %5s %5s %9s %9s %9s %9s %9s %9s\n", "timestep",   "seq",  "rank",   "t1(sec)",   "(MiB/s)",   "t2(sec)",   "(MiB/s)",   "t3(sec)",   "(MiB/s)");
-                        printf("    %14s %5s %5s %9s %9s %9s %9s %9s %9s\n", "--------", "-----", "-----", "---------", "---------", "---------", "---------", "---------", "---------");
+                        double t_elap[3];
+                        MPI_Barrier(MPI_COMM_WORLD);
+                        do_write_1var(fname_save.c_str(), amode.c_str(), vname/*f->var_namelist[v->varid]*/,
+                                      NX, NY, data, G, O, comm, &adios_groupsize, &t0, t_elap);
+                        
+                        if (it==0 && rank==0)
+                        {
+                            printf("    %14s %5s %5s %9s %9s %9s %9s %9s %9s\n", "timestep",   "seq",  "rank",   "t1(sec)",   "(MiB/s)",   "t2(sec)",   "(MiB/s)",   "t3(sec)",   "(MiB/s)");
+                            printf("    %14s %5s %5s %9s %9s %9s %9s %9s %9s\n", "--------", "-----", "-----", "---------", "---------", "---------", "---------", "---------", "---------");
+                        }
+                        
+                        printf(">>> %14.03f %5d %5d %9.03e %9.03f %9.03e %9.03f %9.03e %9.03f\n",
+                               t0, f->current_step, rank,
+                               t_elap[0], (double)adios_groupsize/t_elap[0]/1024.0/1024.0,
+                               t_elap[1], (double)adios_groupsize/t_elap[1]/1024.0/1024.0,
+                               t_elap[2], (double)adios_groupsize/t_elap[2]/1024.0/1024.0);
                     }
-                    
-                    printf(">>> %14.03f %5d %5d %9.03e %9.03f %9.03e %9.03f %9.03e %9.03f\n",
-                           t0, f->current_step, rank,
-                           t_elap[0], (double)adios_groupsize/t_elap[0]/1024.0/1024.0,
-                           t_elap[1], (double)adios_groupsize/t_elap[1]/1024.0/1024.0,
-                           t_elap[2], (double)adios_groupsize/t_elap[2]/1024.0/1024.0);
-                    
                     if (it==nstep-1) break;
                     
                     sleep_with_interval((double)interval_sec, SLEEP_SEC);

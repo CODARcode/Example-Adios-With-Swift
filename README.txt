@@ -1,5 +1,5 @@
 
-This is an example to demonstrate Adios ICEE method for WAN staging.
+This is a test program to demonstrate Adios ICEE method for WAN staging.
 
 == ICEE Initialization ==
 
@@ -14,15 +14,15 @@ reader by the following steps:
 register. Writer's listening port can be specified by "cm_port"
 option when calling adios_select_method (when using Adios no xml init)
 or in an xml file.
-and
+
 The following options can be used for initializing writer:
 
     cm_port : writer's listening port
     max_client : number of clients to register (default is 1)
 
-2. A reader needs to know the writer's hostname and port. Then, the
-reader connects to the writer and registers his connection information
-(reader's hostname and port). 
+2. A reader (or client) needs to know the writer's hostname and
+port. Then, the reader connects to the writer and registers his
+connection information (reader's hostname and port).
 
 The following options can be specified on calling
 adios_read_init_method:
@@ -40,60 +40,34 @@ multiple sources. Then, use the following option:
 
 3. After successful registration, the writer will push data to the reader.
 
+Note: In "passive" mode (--passive option), only one port (server's
+port) needs to be open. A reader connects to a server and then the
+server communicates through the channel. It can be useful in a case
+where one side has a strict firewall setting.
 
+== Example ==
 
-== ICEE Example ==
-
-This program consists of two Adios executables; adios_write and
-adios_read. adios_write will send data through TCP/IP to adios_read.
+This program adios_icee can work as a server (by default) and a
+client (with -c option).
 
 Case I: 1-to-1 connection (one writer and one reader)
 
 We assume the following TCP/IP connection:
 
-       adios_write            adios_read
+      server (writer)       client (reader)
 node:    host1                  host2
 port:    59997                  59999
 
-Execution is as follows. First, run the writer:
+Execution is as follows. First, run a server:
 
-$ adios_write -w ICEE -p 59997
+$ adios_icee -w ICEE -p 59997
 
-Then, run the reader in another terminal:
+Then, run a client in another terminal:
 
-$ adios_read -w ICEE -h host2 -p 59999 -s host1 -t 59997
+$ adios_icee -c -r ICEE -s host1 -t 59997 -p 59999
 
-
-Case II: N-to-1 connection (N writers and one reader)
-
-We assume the following TCP/IP connection:
-
-                  2 adios_write            adios_read
-node:               host1                    host2
-rank 0's port:      59997                    59999
-rank 1's port:      59998                    
-
-$ mpirun -n 2 adios_write -w ICEE -p 59997
-
-Note: the rank 1's port will be computed by rank 0's port + 1. This is
-not a ICEE function. It is programed in this example.
-
-$ adios_read -r ICEE -h host2 -p 59999 -u "host1:59997,host1:59998"
+With a passive mode, client has no need to privde a port number:
+$ adios_icee -w ICEE -p 59997 --passive
+$ adios_icee -c -r ICEE -s host1 -t 59997 --passive
 
 
-Case III: 1-to-N connection (1 writer and N readers)
-
-We assume the following TCP/IP connection:
-
-                  adios_write            2 adios_read
-node:               host1                    host2
-rank 0's port:      59997                    59999
-rank 1's port:                               60000
-
-
-$ adios_write -w ICEE -p 59997 -m 2
-
-$ mpirun -n 2 adios_read -r ICEE -h host2 -p 59999 -u "host1:59997"
-
-Or, 
-$ mpirun -n 2 adios_read -r ICEE -h host2 -p 59999 -s host1 -t 59997
