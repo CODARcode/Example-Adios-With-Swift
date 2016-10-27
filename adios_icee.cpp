@@ -375,12 +375,6 @@ int main (int argc, char ** argv)
     
     if (mode == SERVER)
     {
-        if (args_info.probe_flag)
-        {
-            NX_copy = NX;
-            NX = 0;
-            minlen = 0;
-        }
         while (NX >= minlen)
         {
             ATYPE        *t = (ATYPE *) malloc(NX * NY * sizeof(ATYPE));
@@ -458,18 +452,7 @@ int main (int argc, char ** argv)
                 }
             }
 
-            if (args_info.probe_flag)
-            {
-                NX = NX_copy;
-                minlen = NX;
-                if (args_info.all_flag)
-                    minlen = args_info.minlen_arg;
-                args_info.probe_flag = false;
-            }
-            else
-            {
-                NX = NX/2;
-            }
+            NX = NX/2;
         }
         adios_finalize (rank);
     }
@@ -484,10 +467,7 @@ int main (int argc, char ** argv)
         ATYPE *data = NULL;
         uint64_t start[2], count[2];
         
-        double timestamp = 0.0;
-        double deltat = 0.0;
-        double sum_deltat = 0.0;
-        int    cnt_deltat = 1;
+        double icee_deltat = 0.0;
         uint64_t start1[2], count1[2];
         
         err = adios_read_init_method (adios_read_method, comm, rparam.c_str());
@@ -609,8 +589,9 @@ int main (int argc, char ** argv)
                     double t0 = MPI_Wtime();
                     
                     if (NX>0) adios_schedule_read_byid (f, sel, v->varid, 0, 1, data);
-                    adios_schedule_read (f, sel1, "timestamp", 0, 1, &timestamp);
+                    adios_schedule_read (f, NULL, "__icee_deltat__", 0, 1, &icee_deltat);
                     adios_perform_reads (f, 1);
+                    //printf("icee_deltat=%g\n", icee_deltat);
                     
                     //MPI_Barrier(comm);
                     double t1 = MPI_Wtime();
@@ -626,33 +607,23 @@ int main (int argc, char ** argv)
                         sum += (double) data[i];
                     }
                     
-                    if (NX==0)
-                    {
-                        deltat = t1 - timestamp;
-                        sum_deltat += deltat;
-                        cnt_deltat++;
-                    }
-                    else
-                    {
-                        deltat = t1 - timestamp - sum_deltat/(double)cnt_deltat;
-                    }
                     adios_groupsize = (NX*NY)*sizeof(ATYPE);
                     printf("+++ %14.03f %5d %5d %9.03e %9.03f %9.03e %9.03f (%9s %9.03e %9.03e)\n",
                            t0, f->current_step, rank, t10,
                            (double)adios_groupsize/t10/1024.0/1024.0,
-                           deltat, (double)adios_groupsize/deltat/1024.0/1024.0,
+                           icee_deltat, (double)adios_groupsize/icee_deltat/1024.0/1024.0,
                            vname/*f->var_namelist[v->varid]*/, sum, sum/NX/NY);
-                    printf("%d: groupsize = %llu, %f %f\n", rank, adios_groupsize, (double)adios_groupsize/deltat, sum_deltat/(double)cnt_deltat);
+                    //printf("%d: groupsize = %llu, %f %f\n", rank, adios_groupsize, (double)adios_groupsize/deltat, sum_deltat/(double)cnt_deltat);
                     
                     MPI_Allreduce(MPI_IN_PLACE, &adios_groupsize, 1, MPI_LONG, MPI_SUM, MPI_COMM_WORLD);
                     MPI_Allreduce(MPI_IN_PLACE, &t10, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-                    MPI_Allreduce(MPI_IN_PLACE, &deltat, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+                    MPI_Allreduce(MPI_IN_PLACE, &icee_deltat, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
                     if (rank==0)
                     {
                         printf("SUM %14.03f %5d %5d %9.03e %9.03f %9.03e %9.03f\n",
                                t0, f->current_step, rank,
                                t10, (double)adios_groupsize/t10/1024.0/1024.0,
-                               deltat, (double)adios_groupsize/deltat/1024.0/1024.0);
+                               icee_deltat, (double)adios_groupsize/icee_deltat/1024.0/1024.0);
                     }
                     
                     if (args_info.evilread_flag)
@@ -714,7 +685,7 @@ int main (int argc, char ** argv)
                     }
                 }
                 
-                if ((args_info.all_flag && (NX>minlen)) || (args_info.probe_flag))
+                if (args_info.all_flag && (NX>minlen))
                 {
                     printf ("Waiting next ... (NX=%lld)\n", NX);
                     
@@ -735,9 +706,6 @@ int main (int argc, char ** argv)
                                 rank, adios_errmsg());
                         break; // quit while loop
                     }
-                    
-                    if (args_info.probe_flag) args_info.probe_flag = false;
-                    
                 }
                 else
                     break;
