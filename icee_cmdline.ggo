@@ -37,3 +37,4 @@ option "nclient" - "maximum number of clients" int optional
 option "isnative" - "use native contact" flag off
 option "remotelist" - "remote list" string optional
 option "attrlist" a "attr list" string optional
+option "allremotes" S "list of all remote hostnames" string optional multiple

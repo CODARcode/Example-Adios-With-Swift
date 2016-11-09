@@ -68,6 +68,7 @@ const char *icee_args_info_help[] = {
   "      --isnative            use native contact  (default=off)",
   "      --remotelist=STRING   remote list",
   "  -a, --attrlist=STRING     attr list",
+  "  -S, --allremotes=STRING   list of all remote hostnames",
     0
 };
 
@@ -131,6 +132,7 @@ void clear_given (struct icee_args_info *args_info)
   args_info->isnative_given = 0 ;
   args_info->remotelist_given = 0 ;
   args_info->attrlist_given = 0 ;
+  args_info->allremotes_given = 0 ;
 }
 
 static
@@ -192,6 +194,8 @@ void clear_args (struct icee_args_info *args_info)
   args_info->remotelist_orig = NULL;
   args_info->attrlist_arg = NULL;
   args_info->attrlist_orig = NULL;
+  args_info->allremotes_arg = NULL;
+  args_info->allremotes_orig = NULL;
   
 }
 
@@ -236,6 +240,9 @@ void init_args_info(struct icee_args_info *args_info)
   args_info->isnative_help = icee_args_info_help[31] ;
   args_info->remotelist_help = icee_args_info_help[32] ;
   args_info->attrlist_help = icee_args_info_help[33] ;
+  args_info->allremotes_help = icee_args_info_help[34] ;
+  args_info->allremotes_min = 0;
+  args_info->allremotes_max = 0;
   
 }
 
@@ -406,6 +413,7 @@ icee_cmdline_parser_release (struct icee_args_info *args_info)
   free_string_field (&(args_info->remotelist_orig));
   free_string_field (&(args_info->attrlist_arg));
   free_string_field (&(args_info->attrlist_orig));
+  free_multiple_string_field (args_info->allremotes_given, &(args_info->allremotes_arg), &(args_info->allremotes_orig));
   
   
 
@@ -511,6 +519,7 @@ icee_cmdline_parser_dump(FILE *outfile, struct icee_args_info *args_info)
     write_into_file(outfile, "remotelist", args_info->remotelist_orig, 0);
   if (args_info->attrlist_given)
     write_into_file(outfile, "attrlist", args_info->attrlist_orig, 0);
+  write_multiple_into_file(outfile, args_info->allremotes_given, "allremotes", args_info->allremotes_orig, 0);
   
 
   i = EXIT_SUCCESS;
@@ -763,6 +772,9 @@ icee_cmdline_parser_required2 (struct icee_args_info *args_info, const char *pro
 
   /* checks for required options */
   if (check_multiple_option_occurrences(prog_name, args_info->filelock_given, args_info->filelock_min, args_info->filelock_max, "'--filelock'"))
+     error_occurred = 1;
+  
+  if (check_multiple_option_occurrences(prog_name, args_info->allremotes_given, args_info->allremotes_min, args_info->allremotes_max, "'--allremotes' ('-S')"))
      error_occurred = 1;
   
   
@@ -1074,6 +1086,7 @@ icee_cmdline_parser_internal (
   int c;	/* Character of the parsed option.  */
 
   struct generic_list * filelock_list = NULL;
+  struct generic_list * allremotes_list = NULL;
   int error_occurred = 0;
   struct icee_args_info local_args_info;
   
@@ -1138,10 +1151,11 @@ icee_cmdline_parser_internal (
         { "isnative",	0, NULL, 0 },
         { "remotelist",	1, NULL, 0 },
         { "attrlist",	1, NULL, 'a' },
+        { "allremotes",	1, NULL, 'S' },
         { 0,  0, 0, 0 }
       };
 
-      c = getopt_long (argc, argv, "hVcw:r:n:p:s:t:T:v:e:a:", long_options, &option_index);
+      c = getopt_long (argc, argv, "hVcw:r:n:p:s:t:T:v:e:a:S:", long_options, &option_index);
 
       if (c == -1) break;	/* Exit from `while (1)' loop.  */
 
@@ -1292,6 +1306,15 @@ icee_cmdline_parser_internal (
               &(local_args_info.attrlist_given), optarg, 0, 0, ARG_STRING,
               check_ambiguity, override, 0, 0,
               "attrlist", 'a',
+              additional_error))
+            goto failure;
+        
+          break;
+        case 'S':	/* list of all remote hostnames.  */
+        
+          if (update_multiple_arg_temp(&allremotes_list, 
+              &(local_args_info.allremotes_given), optarg, 0, 0, ARG_STRING,
+              "allremotes", 'S',
               additional_error))
             goto failure;
         
@@ -1592,9 +1615,15 @@ icee_cmdline_parser_internal (
     &(args_info->filelock_orig), args_info->filelock_given,
     local_args_info.filelock_given, 0,
     ARG_STRING, filelock_list);
+  update_multiple_arg((void *)&(args_info->allremotes_arg),
+    &(args_info->allremotes_orig), args_info->allremotes_given,
+    local_args_info.allremotes_given, 0,
+    ARG_STRING, allremotes_list);
 
   args_info->filelock_given += local_args_info.filelock_given;
   local_args_info.filelock_given = 0;
+  args_info->allremotes_given += local_args_info.allremotes_given;
+  local_args_info.allremotes_given = 0;
   
   if (check_required)
     {
@@ -1610,6 +1639,7 @@ icee_cmdline_parser_internal (
 
 failure:
   free_list (filelock_list, 1 );
+  free_list (allremotes_list, 1 );
   
   icee_cmdline_parser_release (&local_args_info);
   return (EXIT_FAILURE);

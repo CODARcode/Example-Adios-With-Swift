@@ -141,6 +141,11 @@ struct icee_args_info
   char * attrlist_arg;	/**< @brief attr list.  */
   char * attrlist_orig;	/**< @brief attr list original value given at command line.  */
   const char *attrlist_help; /**< @brief attr list help description.  */
+  char ** allremotes_arg;	/**< @brief list of all remote hostnames.  */
+  char ** allremotes_orig;	/**< @brief list of all remote hostnames original value given at command line.  */
+  unsigned int allremotes_min; /**< @brief list of all remote hostnames's minimum occurreces */
+  unsigned int allremotes_max; /**< @brief list of all remote hostnames's maximum occurreces */
+  const char *allremotes_help; /**< @brief list of all remote hostnames help description.  */
   
   unsigned int help_given ;	/**< @brief Whether help was given.  */
   unsigned int version_given ;	/**< @brief Whether version was given.  */
@@ -176,6 +181,7 @@ struct icee_args_info
   unsigned int isnative_given ;	/**< @brief Whether isnative was given.  */
   unsigned int remotelist_given ;	/**< @brief Whether remotelist was given.  */
   unsigned int attrlist_given ;	/**< @brief Whether attrlist was given.  */
+  unsigned int allremotes_given ;	/**< @brief Whether allremotes was given.  */
 
 } ;
 

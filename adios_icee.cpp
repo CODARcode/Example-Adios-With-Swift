@@ -346,6 +346,9 @@ int main (int argc, char ** argv)
         
         if (args_info.probe_given)
             s << "use_probe=" << args_info.probe_flag << ";";
+        
+        if (args_info.allremotes_given)
+            s << "cm_remote_host=" << args_info.allremotes_arg[rank % args_info.allremotes_given] << ";";
     }
     
     if (adios_write_method == "ICEE")
