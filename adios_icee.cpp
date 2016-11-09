@@ -480,9 +480,11 @@ int main (int argc, char ** argv)
             printf ("(%d) %s\n", err, adios_errmsg());
         }
         
-        //f = adios_read_open_file (fname.c_str(), adios_read_method, comm);
-        f = adios_read_open (fname.c_str(), adios_read_method, comm,
-                             ADIOS_LOCKMODE_ALL, timeout_sec);
+        if (args_info.nostream_flag)
+            f = adios_read_open_file (fname.c_str(), adios_read_method, comm);
+        else
+            f = adios_read_open (fname.c_str(), adios_read_method, comm,
+                                 ADIOS_LOCKMODE_ALL, timeout_sec);
         
         if (adios_errno == err_file_not_found)
         {
