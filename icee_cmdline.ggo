@@ -25,6 +25,7 @@ option "all" - "Runs all sizes, up to `length'" flag off
 option "minlen" - "minlen" longlong optional default="1"
 option "probe" - "use probe" flag off
 option "nostream" - "no stream" flag off
+option "transform" - "transform" string optional default="" 
 
 option "host" - "local hostname" string optional default="localhost"
 option "port" p "local port" int optional default="59900"

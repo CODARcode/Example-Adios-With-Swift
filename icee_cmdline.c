@@ -57,6 +57,7 @@ const char *icee_args_info_help[] = {
   "      --minlen=LONGLONG     minlen  (default=`1')",
   "      --probe               use probe  (default=off)",
   "      --nostream            no stream  (default=off)",
+  "      --transform=STRING    transform  (default=`')",
   "      --host=STRING         local hostname  (default=`localhost')",
   "  -p, --port=INT            local port  (default=`59900')",
   "  -s, --remotehost=STRING   remote hostname  (default=`localhost')",
@@ -122,6 +123,7 @@ void clear_given (struct icee_args_info *args_info)
   args_info->minlen_given = 0 ;
   args_info->probe_given = 0 ;
   args_info->nostream_given = 0 ;
+  args_info->transform_given = 0 ;
   args_info->host_given = 0 ;
   args_info->port_given = 0 ;
   args_info->remotehost_given = 0 ;
@@ -176,6 +178,8 @@ void clear_args (struct icee_args_info *args_info)
   args_info->minlen_orig = NULL;
   args_info->probe_flag = 0;
   args_info->nostream_flag = 0;
+  args_info->transform_arg = gengetopt_strdup ("");
+  args_info->transform_orig = NULL;
   args_info->host_arg = gengetopt_strdup ("localhost");
   args_info->host_orig = NULL;
   args_info->port_arg = 59900;
@@ -232,19 +236,20 @@ void init_args_info(struct icee_args_info *args_info)
   args_info->minlen_help = icee_args_info_help[20] ;
   args_info->probe_help = icee_args_info_help[21] ;
   args_info->nostream_help = icee_args_info_help[22] ;
-  args_info->host_help = icee_args_info_help[23] ;
-  args_info->port_help = icee_args_info_help[24] ;
-  args_info->remotehost_help = icee_args_info_help[25] ;
-  args_info->remoteport_help = icee_args_info_help[26] ;
-  args_info->method_help = icee_args_info_help[27] ;
-  args_info->verbose_help = icee_args_info_help[28] ;
-  args_info->contact_help = icee_args_info_help[29] ;
-  args_info->passive_help = icee_args_info_help[30] ;
-  args_info->nclient_help = icee_args_info_help[31] ;
-  args_info->isnative_help = icee_args_info_help[32] ;
-  args_info->remotelist_help = icee_args_info_help[33] ;
-  args_info->attrlist_help = icee_args_info_help[34] ;
-  args_info->allremotes_help = icee_args_info_help[35] ;
+  args_info->transform_help = icee_args_info_help[23] ;
+  args_info->host_help = icee_args_info_help[24] ;
+  args_info->port_help = icee_args_info_help[25] ;
+  args_info->remotehost_help = icee_args_info_help[26] ;
+  args_info->remoteport_help = icee_args_info_help[27] ;
+  args_info->method_help = icee_args_info_help[28] ;
+  args_info->verbose_help = icee_args_info_help[29] ;
+  args_info->contact_help = icee_args_info_help[30] ;
+  args_info->passive_help = icee_args_info_help[31] ;
+  args_info->nclient_help = icee_args_info_help[32] ;
+  args_info->isnative_help = icee_args_info_help[33] ;
+  args_info->remotelist_help = icee_args_info_help[34] ;
+  args_info->attrlist_help = icee_args_info_help[35] ;
+  args_info->allremotes_help = icee_args_info_help[36] ;
   args_info->allremotes_min = 0;
   args_info->allremotes_max = 0;
   
@@ -401,6 +406,8 @@ icee_cmdline_parser_release (struct icee_args_info *args_info)
   free_string_field (&(args_info->mpicolor_orig));
   free_multiple_string_field (args_info->filelock_given, &(args_info->filelock_arg), &(args_info->filelock_orig));
   free_string_field (&(args_info->minlen_orig));
+  free_string_field (&(args_info->transform_arg));
+  free_string_field (&(args_info->transform_orig));
   free_string_field (&(args_info->host_arg));
   free_string_field (&(args_info->host_orig));
   free_string_field (&(args_info->port_orig));
@@ -501,6 +508,8 @@ icee_cmdline_parser_dump(FILE *outfile, struct icee_args_info *args_info)
     write_into_file(outfile, "probe", 0, 0 );
   if (args_info->nostream_given)
     write_into_file(outfile, "nostream", 0, 0 );
+  if (args_info->transform_given)
+    write_into_file(outfile, "transform", args_info->transform_orig, 0);
   if (args_info->host_given)
     write_into_file(outfile, "host", args_info->host_orig, 0);
   if (args_info->port_given)
@@ -1146,6 +1155,7 @@ icee_cmdline_parser_internal (
         { "minlen",	1, NULL, 0 },
         { "probe",	0, NULL, 0 },
         { "nostream",	0, NULL, 0 },
+        { "transform",	1, NULL, 0 },
         { "host",	1, NULL, 0 },
         { "port",	1, NULL, 'p' },
         { "remotehost",	1, NULL, 's' },
@@ -1547,6 +1557,20 @@ icee_cmdline_parser_internal (
             if (update_arg((void *)&(args_info->nostream_flag), 0, &(args_info->nostream_given),
                 &(local_args_info.nostream_given), optarg, 0, 0, ARG_FLAG,
                 check_ambiguity, override, 1, 0, "nostream", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* transform.  */
+          else if (strcmp (long_options[option_index].name, "transform") == 0)
+          {
+          
+          
+            if (update_arg( (void *)&(args_info->transform_arg), 
+                 &(args_info->transform_orig), &(args_info->transform_given),
+                &(local_args_info.transform_given), optarg, 0, "", ARG_STRING,
+                check_ambiguity, override, 0, 0,
+                "transform", '-',
                 additional_error))
               goto failure;
           

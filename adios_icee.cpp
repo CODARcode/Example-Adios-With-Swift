@@ -74,7 +74,7 @@ void sleep_with_interval (double timeout_sec, int interval_ms)
     //printf("Spent: %g (sec)\n", elapsed_time);
 }
 
-void do_define(const char* adios_write_method, const char* initstr)
+void do_define(const string adios_write_method, const string initstr, const string transformstr = "")
 {
     int64_t       m_adios_group;
     
@@ -84,7 +84,7 @@ void do_define(const char* adios_write_method, const char* initstr)
 #else
     adios_declare_group (&m_adios_group, "restart", "", adios_stat_no);
 #endif
-    adios_select_method (m_adios_group, adios_write_method, initstr, "");
+    adios_select_method (m_adios_group, adios_write_method.c_str(), initstr.c_str(), "");
     
     adios_define_var (m_adios_group, "NX",
                       "", adios_long,
@@ -106,9 +106,13 @@ void do_define(const char* adios_write_method, const char* initstr)
     {
         char vname[32];
         sprintf(vname, "var%02d", i);
-        adios_define_var (m_adios_group, vname,
+        int64_t var_id;
+        var_id = adios_define_var (m_adios_group, vname,
                           "", ADIOS_ATYPE,
                           "NX,NY", "G,NY", "O,0");
+        
+        if (transformstr != "")
+            adios_set_transform (var_id, transformstr.c_str());
     }
     
     adios_define_var (m_adios_group, "size",
@@ -371,7 +375,12 @@ int main (int argc, char ** argv)
     string fname_save = "icee_out.bp";
     
     adios_init_noxml (comm);
-    do_define(adios_write_method.c_str(), wparam.c_str());
+    
+    uint64_t buffer_size = ((NX * NY * sizeof(ATYPE) + 64)>>20) + 1L + 500;
+    printf("Allocating buffer: %lld\n", buffer_size);
+    adios_set_max_buffer_size (buffer_size);
+    
+    do_define(adios_write_method, wparam, string(args_info.transform_arg));
     
     uint64_t adios_groupsize;//, adios_totalsize;
     uint64_t G, O;
@@ -385,7 +394,7 @@ int main (int argc, char ** argv)
             assert(t != NULL);
             
             //adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, ((NVAR * NX * NY * sizeof(ATYPE))>>20) + 1L);
-            adios_set_max_buffer_size (((NX * NY * sizeof(ATYPE) + 64)>>20) + 1L);
+            //adios_set_max_buffer_size (((NX * NY * sizeof(ATYPE) + 64)>>20) + 1L);
             
             G = NX * size;
             O = rank * NX;
