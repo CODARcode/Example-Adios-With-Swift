@@ -243,7 +243,7 @@ int main (int argc, char ** argv)
     uint64_t minlen = NX;
     if (args_info.all_flag)
         minlen = args_info.minlen_arg;
-    uint64_t NX_copy = args_info.len_arg;
+    //uint64_t NX_copy = args_info.len_arg;
     
     float timeout_sec = args_info.timeout_arg;
     int   interval_sec = args_info.sleep_arg;
