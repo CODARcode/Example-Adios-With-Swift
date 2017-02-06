@@ -3,11 +3,10 @@ namespace eval adios_icee {
     proc main_leaf_tcl { outputs inputs args } {
         set z [ lindex $outputs 0 ]
         set A [ lindex $inputs 0 ]
-        set k [ lindex $inputs 1 ]
-        rule [list $A $k]  "adios_icee::main_leaf_tcl_body $z $A $k" {*}$args type $turbine::WORK
+        rule $A  "adios_icee::main_leaf_tcl_body $z $A" {*}$args type $turbine::WORK
     }
 
-    proc main_leaf_tcl_body { z A k } {
+    proc main_leaf_tcl_body { z A} {
         # Look up MPI information
         set comm [ turbine::c::task_comm ]
         set rank [ adlb::rank $comm ]
