@@ -6,8 +6,8 @@ LDFLAGS =
 ADIOS_INC = $(shell adios_config -c)
 ADIOS_LIB = $(shell adios_config -l)
 
-TCL_INC = -I/opt/local/include
-TCL_LIB = -L/opt/local/lib -ltcl
+TCL_INCLUDE_SPEC ?= -I/opt/local/include
+TCL_LIB_SPEC ?= -L/opt/local/lib -ltcl
 
 INCS = $(ADIOS_INC)
 LIBS = $(ADIOS_LIB)
@@ -57,8 +57,8 @@ adios_icee: adios_icee.o icee_cmdline.o filelock.o
 
 lib: adios_icee.o filelock.o icee_cmdline.o
 	swig -c++ adios_icee.i
-	$(CXX) -c -fPIC $(TCL_INC) adios_icee_wrap.cxx
-	$(CXX) -shared -o libadios_icee.so adios_icee_wrap.o adios_icee.o filelock.o icee_cmdline.o $(TCL_LIB) $(LIBS)
+	$(CXX) -c -fPIC $(TCL_INCLUDE_SPEC) adios_icee_wrap.cxx
+	$(CXX) -shared -o libadios_icee.so adios_icee_wrap.o adios_icee.o filelock.o icee_cmdline.o $(TCL_LIB_SPEC) $(LIBS)
 
 ggo:
 	gengetopt --input=icee_cmdline.ggo --no-handle-version

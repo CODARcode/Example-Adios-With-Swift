@@ -7,9 +7,9 @@ import string;
 int x;
 
 wait (x) {
-  @par=2 main_leaf(split("adios_icee --nstep=1 -c", " ")) =>
+  @par=2 main_leaf(split("adios_icee --nstep=1 -c -r BP -w MPI", " ")) =>
   trace("Reading ... done.");
 }
 
-x = @par=2 main_leaf(split("adios_icee -w MPI --nstep=1", " ")) =>
+x = @par=2 main_leaf(split("adios_icee --nstep=1 -w MPI", " ")) =>
 trace("Writing ... done.");
