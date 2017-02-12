@@ -272,6 +272,8 @@ int main_leaf (int argc, char ** argv, MPI_Comm world_comm)
             adios_read_method = ADIOS_READ_METHOD_DIMES;
         } else if (string(args_info.readmethod_arg) == "DATASPACES") {
             adios_read_method = ADIOS_READ_METHOD_DATASPACES;
+        } else if (string(args_info.readmethod_arg) == "FLEXPATH") {
+            adios_read_method = ADIOS_READ_METHOD_FLEXPATH;
         } else {
             fprintf(stderr, "No read method: %s\n", optarg);
         }
