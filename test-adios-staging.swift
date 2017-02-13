@@ -1,15 +1,23 @@
 
 import io;
 import string;
+import sys;
 
 @par @dispatch=WORKER (int z) main_leaf(string argv[]) "adios_icee" "0.0" "main_leaf_tcl";
 
-int x;
+argv_accept("wmethod", "rmethod");
 
-//wait (x) {
-  @par=2 main_leaf(split("adios_icee --nstep=1 -c -r FLEXPATH -w MPI --rparam=verbose=7", " ")) =>
-  trace("Reading ... done.");
-//}
+string wmethod;
+string rmethod;
 
-x = @par=2 main_leaf(split("adios_icee --nstep=1 -w FLEXPATH --wparam=verbose=7", " ")) =>
+wmethod = argv("wmethod", "MPI");
+rmethod = argv("rmethod", "BP");
+
+trace("Write method" + wmethod);
+trace("Read method" + rmethod);
+
+@par=2 main_leaf(split(sprintf("adios_icee --nstep=1 -c -r %s -w MPI --rparam=verbose=3",rmethod), " ")) =>
+trace("Reading ... done.");
+
+@par=2 main_leaf(split(sprintf("adios_icee --nstep=1 -w %s --wparam=verbose=3",wmethod), " ")) =>
 trace("Writing ... done.");

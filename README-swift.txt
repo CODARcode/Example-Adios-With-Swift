@@ -31,7 +31,9 @@ adios_icee.i
 In this example, we use the following comand to build:
 swig -c++ adios_icee.i
 $(CXX) -c -fPIC $(TCL_INC) adios_icee_wrap.cxx
-$(CXX) -shared -o libadios_icee.so adios_icee_wrap.o adios_icee.o filelock.o icee_cmdline.o $(TCL_LIB) $(LIBS)
+$(CXX) -shared -o libadios_icee.so \
+       adios_icee_wrap.o adios_icee.o filelock.o icee_cmdline.o \
+       $(TCL_LIB) $(LIBS)
 
 3. Create a Tcl script to call the wrapper
 adios_icee.tcl
@@ -46,5 +48,17 @@ Build and run
 To build:
 $ build.sh
 
-To run:
-$ test-adios-icee.sh
+We will describe here 3 run cases:
+1. file-based coupling:
+$ turbine -n 5 test-adios-staging.tic --wmethod=MPI --rmethod=BP
+
+2. FLEXPATH:
+$ turbine -n 5 test-adios-staging.tic --wmethod=FLEXPATH --rmethod=FLEXPATH
+
+3. DataSpaces:
+$ run-dataspaces.py -s 1 -c 4 : \
+  --nompi turbine -n 5 test-adios-staging.tic \
+  --wmethod=DATASPACES --rmethod=DATASPACES
+
+run-dataspaces.py is a wrapper to run dataspaces_server, which is
+available at https://github.com/jychoi-hpc/run-dataspaces
