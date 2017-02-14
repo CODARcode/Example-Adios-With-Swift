@@ -72,3 +72,28 @@ $ run-dataspaces.py -s 1 -c 4 : \
 
 run-dataspaces.py is a wrapper to run dataspaces_server, which is
 available at https://github.com/jychoi-hpc/run-dataspaces
+
+Note on Titan
+-------------
+
+1. load modules and set LD_LIBRARY_PATH env
+```
+module use -a /lustre/atlas/world-shared/csc143/jyc/titan/sw/modulefiles
+module unload PrgEnv-pgi
+module unload PrgEnv-gnu
+module unload PrgEnv-cray
+module unload PrgEnv-intel
+
+module load PrgEnv-gnu
+module load swift-t
+module load adios/1.12-devel
+module load swig
+export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH
+```
+
+2. Use --mpirun=aprun option to run-dataspaces.py
+```
+$ run-dataspaces.py -s 1 -c 4 --mpirun=aprun : \
+  --nompi turbine -n 5 test-adios-staging.tic \
+  --wmethod=DATASPACES --rmethod=DATASPACES
+```
