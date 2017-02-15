@@ -76,7 +76,7 @@ available at https://github.com/jychoi-hpc/run-dataspaces
 Note on Titan
 -------------
 
-1. load modules and set LD_LIBRARY_PATH env
+### 1. load modules and set LD_LIBRARY_PATH env
 ```
 module use -a /lustre/atlas/world-shared/csc143/jyc/titan/sw/modulefiles
 module unload PrgEnv-pgi
@@ -91,7 +91,7 @@ module load swig
 export LD_LIBRARY_PATH=.:$LD_LIBRARY_PATH
 ```
 
-2. Use --mpirun=aprun option to run-dataspaces.py
+### 2. Use --mpirun=aprun option to run-dataspaces.py
 ```
 $ run-dataspaces.py -s 1 -c 4 --mpirun=aprun : \
   --nompi turbine -n 5 test-adios-staging.tic \
