@@ -1,5 +1,4 @@
 #!/bin/bash -ex
-#./build.sh
 
 rm -f *.bp*
 ./run-dataspaces.py -s 1 -c 4 --mpirun=aprun : \
