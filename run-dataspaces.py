@@ -8,6 +8,9 @@ $ run-dataspaces.py SERVER_COMMAND [ : APPLICATION_COMMAND ] *
 
 More details of options will be printed with '-h' option:
 $ run-dataspaces.py -h
+
+For the most recent code, please check out here:
+https://github.com/jychoi-hpc/run-dataspaces
 '''
 
 import sys
@@ -67,6 +70,8 @@ def main():
     parser_svr.add_argument('--stderr', '-e', help='stderr')
     parser_svr.add_argument('--oe', help='merging stdout and stderr')
     parser_svr.add_argument('--dryrun', action='store_true', help='dryrun')
+    parser_svr.add_argument('--noserver', action='store_true', help='no server')
+    parser_svr.add_argument('--sleep', help='sleep time between executions', type=int, default=5)
 
     parser_cmd = argparse.ArgumentParser(prog='APP_COMMAND', add_help=False)
     parser_cmd.add_argument('--np', '-n', help='num. of processes', type=int, default=1)
@@ -107,19 +112,22 @@ def main():
         {'mpirun':args.mpirun, 'nserver':args.nserver, 'nclient':nclient}
 
     logging.debug('CMD: %s' % ds_cmd)
-    if not args.dryrun:
+    plist = list()
+    if not args.dryrun and not args.noserver:
         f_stdout, f_stderr = getstds(args)
         p0 = subprocess.Popen(ds_cmd.split(),
                 stdout=f_stdout, stderr=f_stderr,
                 close_fds=True)
+        logging.debug('PID: %r (%r)' % (p0.pid, ds_cmd))
+        plist.append(p0)
 
-    if not args.dryrun:
+    env = os.environ.copy()
+    if not args.dryrun and not args.noserver:
         while not os.path.exists('conf'):
             time.sleep(5)
 
         logging.debug('dataspaces_server is ready.')
 
-        env = os.environ.copy()
         with open('conf') as f:
             lines = f.readlines()
             for ln in lines:
@@ -145,9 +153,14 @@ def main():
             p1 = subprocess.Popen(cl_cmd.split(), env=env,
                     stdout=f_stdout, stderr=f_stderr,
                     close_fds=True)
+            logging.debug('PID: %r (%r)' % (p1.pid, cl_cmd))
+            plist.append(p1)
+            time.sleep(args.sleep)
 
     if not args.dryrun:
-        p0.wait()
+        for p in plist[::-1]:
+            logging.debug('Waiting PID: %r' % p.pid)
+            p.wait()
     logging.info('Done.')
 
 if __name__ == '__main__':

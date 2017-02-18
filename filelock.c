@@ -104,8 +104,24 @@ pid_t wlockcheck(int fd)
     return (fl.l_pid);        /* true, return pid of lock owner */
 }
 
+void lockinit(const char* fname, int val)
+{
+    char buffer[BUF_SIZE+1];
+    int fd;
+    
+    fd = lockcreate(fname);
+    wlock(fd);
+    if (lseek(fd, 0, SEEK_SET) == -1) goto END;
+    snprintf(buffer, BUF_SIZE+1, "%d\n", val);
+    write(fd, buffer, BUF_SIZE);
+END:
+    wunlock(fd);
+    close(fd);
+}
+
 void lockup(const char* fname)
 {
+    //printf("Trying up-lock: %s\n", fname);
     char buffer[BUF_SIZE+1];
     int fd;
 
@@ -135,6 +151,7 @@ END:
 
 void lockdown(const char* fname)
 {
+    //printf("Trying down-lock: %s\n", fname);
     char buffer[BUF_SIZE+1];
     int fd;
 
