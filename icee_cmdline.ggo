@@ -18,6 +18,7 @@ option "prefix" - "prefix" string optional default=""
 option "append" - "append" flag off
 option "filename" - "filename" string optional
 option "mpicolor" - "MPI comm color" int optional default="0"
+option "uselock" - "uselock" flag off 
 option "filelock" - "filelock name" string optional multiple(2) 
 option "evilread" - "enable evil read" flag off
 option "commself" - "commself" flag off

@@ -5,6 +5,7 @@
 extern "C" {
 #endif
 
+void lockinit(const char* fname, int val);
 void lockup(const char* fname);
 void lockdown(const char* fname);
 

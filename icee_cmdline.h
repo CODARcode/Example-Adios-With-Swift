@@ -87,6 +87,8 @@ struct icee_args_info
   int mpicolor_arg;	/**< @brief MPI comm color (default='0').  */
   char * mpicolor_orig;	/**< @brief MPI comm color original value given at command line.  */
   const char *mpicolor_help; /**< @brief MPI comm color help description.  */
+  int uselock_flag;	/**< @brief uselock (default=off).  */
+  const char *uselock_help; /**< @brief uselock help description.  */
   char ** filelock_arg;	/**< @brief filelock name.  */
   char ** filelock_orig;	/**< @brief filelock name original value given at command line.  */
   unsigned int filelock_min; /**< @brief filelock name's minimum occurreces */
@@ -168,6 +170,7 @@ struct icee_args_info
   unsigned int append_given ;	/**< @brief Whether append was given.  */
   unsigned int filename_given ;	/**< @brief Whether filename was given.  */
   unsigned int mpicolor_given ;	/**< @brief Whether mpicolor was given.  */
+  unsigned int uselock_given ;	/**< @brief Whether uselock was given.  */
   unsigned int filelock_given ;	/**< @brief Whether filelock was given.  */
   unsigned int evilread_given ;	/**< @brief Whether evilread was given.  */
   unsigned int commself_given ;	/**< @brief Whether commself was given.  */

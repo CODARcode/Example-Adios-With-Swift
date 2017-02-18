@@ -50,6 +50,7 @@ const char *icee_args_info_help[] = {
   "      --append              append  (default=off)",
   "      --filename=STRING     filename",
   "      --mpicolor=INT        MPI comm color  (default=`0')",
+  "      --uselock             uselock  (default=off)",
   "      --filelock=STRING     filelock name",
   "      --evilread            enable evil read  (default=off)",
   "      --commself            commself  (default=off)",
@@ -116,6 +117,7 @@ void clear_given (struct icee_args_info *args_info)
   args_info->append_given = 0 ;
   args_info->filename_given = 0 ;
   args_info->mpicolor_given = 0 ;
+  args_info->uselock_given = 0 ;
   args_info->filelock_given = 0 ;
   args_info->evilread_given = 0 ;
   args_info->commself_given = 0 ;
@@ -169,6 +171,7 @@ void clear_args (struct icee_args_info *args_info)
   args_info->filename_orig = NULL;
   args_info->mpicolor_arg = 0;
   args_info->mpicolor_orig = NULL;
+  args_info->uselock_flag = 0;
   args_info->filelock_arg = NULL;
   args_info->filelock_orig = NULL;
   args_info->evilread_flag = 0;
@@ -227,29 +230,30 @@ void init_args_info(struct icee_args_info *args_info)
   args_info->append_help = icee_args_info_help[13] ;
   args_info->filename_help = icee_args_info_help[14] ;
   args_info->mpicolor_help = icee_args_info_help[15] ;
-  args_info->filelock_help = icee_args_info_help[16] ;
+  args_info->uselock_help = icee_args_info_help[16] ;
+  args_info->filelock_help = icee_args_info_help[17] ;
   args_info->filelock_min = 2;
   args_info->filelock_max = 2;
-  args_info->evilread_help = icee_args_info_help[17] ;
-  args_info->commself_help = icee_args_info_help[18] ;
-  args_info->all_help = icee_args_info_help[19] ;
-  args_info->minlen_help = icee_args_info_help[20] ;
-  args_info->probe_help = icee_args_info_help[21] ;
-  args_info->nostream_help = icee_args_info_help[22] ;
-  args_info->transform_help = icee_args_info_help[23] ;
-  args_info->host_help = icee_args_info_help[24] ;
-  args_info->port_help = icee_args_info_help[25] ;
-  args_info->remotehost_help = icee_args_info_help[26] ;
-  args_info->remoteport_help = icee_args_info_help[27] ;
-  args_info->method_help = icee_args_info_help[28] ;
-  args_info->verbose_help = icee_args_info_help[29] ;
-  args_info->contact_help = icee_args_info_help[30] ;
-  args_info->passive_help = icee_args_info_help[31] ;
-  args_info->nclient_help = icee_args_info_help[32] ;
-  args_info->isnative_help = icee_args_info_help[33] ;
-  args_info->remotelist_help = icee_args_info_help[34] ;
-  args_info->attrlist_help = icee_args_info_help[35] ;
-  args_info->allremotes_help = icee_args_info_help[36] ;
+  args_info->evilread_help = icee_args_info_help[18] ;
+  args_info->commself_help = icee_args_info_help[19] ;
+  args_info->all_help = icee_args_info_help[20] ;
+  args_info->minlen_help = icee_args_info_help[21] ;
+  args_info->probe_help = icee_args_info_help[22] ;
+  args_info->nostream_help = icee_args_info_help[23] ;
+  args_info->transform_help = icee_args_info_help[24] ;
+  args_info->host_help = icee_args_info_help[25] ;
+  args_info->port_help = icee_args_info_help[26] ;
+  args_info->remotehost_help = icee_args_info_help[27] ;
+  args_info->remoteport_help = icee_args_info_help[28] ;
+  args_info->method_help = icee_args_info_help[29] ;
+  args_info->verbose_help = icee_args_info_help[30] ;
+  args_info->contact_help = icee_args_info_help[31] ;
+  args_info->passive_help = icee_args_info_help[32] ;
+  args_info->nclient_help = icee_args_info_help[33] ;
+  args_info->isnative_help = icee_args_info_help[34] ;
+  args_info->remotelist_help = icee_args_info_help[35] ;
+  args_info->attrlist_help = icee_args_info_help[36] ;
+  args_info->allremotes_help = icee_args_info_help[37] ;
   args_info->allremotes_min = 0;
   args_info->allremotes_max = 0;
   
@@ -495,6 +499,8 @@ icee_cmdline_parser_dump(FILE *outfile, struct icee_args_info *args_info)
     write_into_file(outfile, "filename", args_info->filename_orig, 0);
   if (args_info->mpicolor_given)
     write_into_file(outfile, "mpicolor", args_info->mpicolor_orig, 0);
+  if (args_info->uselock_given)
+    write_into_file(outfile, "uselock", 0, 0 );
   write_multiple_into_file(outfile, args_info->filelock_given, "filelock", args_info->filelock_orig, 0);
   if (args_info->evilread_given)
     write_into_file(outfile, "evilread", 0, 0 );
@@ -1148,6 +1154,7 @@ icee_cmdline_parser_internal (
         { "append",	0, NULL, 0 },
         { "filename",	1, NULL, 0 },
         { "mpicolor",	1, NULL, 0 },
+        { "uselock",	0, NULL, 0 },
         { "filelock",	1, NULL, 0 },
         { "evilread",	0, NULL, 0 },
         { "commself",	0, NULL, 0 },
@@ -1472,6 +1479,18 @@ icee_cmdline_parser_internal (
                 &(local_args_info.mpicolor_given), optarg, 0, "0", ARG_INT,
                 check_ambiguity, override, 0, 0,
                 "mpicolor", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* uselock.  */
+          else if (strcmp (long_options[option_index].name, "uselock") == 0)
+          {
+          
+          
+            if (update_arg((void *)&(args_info->uselock_flag), 0, &(args_info->uselock_given),
+                &(local_args_info.uselock_given), optarg, 0, 0, ARG_FLAG,
+                check_ambiguity, override, 1, 0, "uselock", '-',
                 additional_error))
               goto failure;
           

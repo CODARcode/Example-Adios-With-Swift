@@ -279,11 +279,14 @@ int main_leaf (int argc, char ** argv, MPI_Comm world_comm)
         }
     }
 
+    /*
+     * Use the lock method for produer-consumer: https://en.wikipedia.org/wiki/Producer–consumer_problem
+     */
     int use_lock = 0;
-    if (args_info.filelock_given)
+    if (args_info.uselock_flag)
         use_lock = 1;
-
-    string lock[] = {"lock1.lck", "lock2.lck"};
+    
+    string lock[] = {"_write.lck", "_read.lck"};
     for (int i = 0; i < args_info.filelock_given; ++i)
     {
         lock[i] = string(args_info.filelock_arg[i]);
@@ -397,6 +400,12 @@ int main_leaf (int argc, char ** argv, MPI_Comm world_comm)
 
     if (mode == SERVER)
     {
+        if (use_lock && (rank == 0))
+        {
+            lockinit(lock[0].c_str(), 1);
+            lockinit(lock[1].c_str(), 0);
+        }
+        
         while (NX >= minlen)
         {
             ATYPE        *t = (ATYPE *) malloc(NX * NY * sizeof(ATYPE));
@@ -423,6 +432,13 @@ int main_leaf (int argc, char ** argv, MPI_Comm world_comm)
                 printf("===================\n\n");
             }
 
+            if (rank==0)
+            {
+                printf("    %14s %5s %5s %9s %9s %9s %9s %9s %9s\n", "timestep",   "seq",  "rank",   "t1(sec)",   "(MiB/s)",   "t2(sec)",   "(MiB/s)",   "t3(sec)",   "(MiB/s)");
+                printf("    %14s %5s %5s %9s %9s %9s %9s %9s %9s\n", "--------", "-----", "-----", "---------", "---------", "---------", "---------", "---------", "---------");
+            }
+            MPI_Barrier(comm);
+            
             for (int it =0; it < nstep; it++)
             {
                 for (uint64_t i = 0; i < NX*NY; i++)
@@ -433,8 +449,7 @@ int main_leaf (int argc, char ** argv, MPI_Comm world_comm)
 
                 if (use_lock && (rank == 0))
                 {
-                    lockup(lock[0].c_str());
-                    lockdown(lock[1].c_str());
+                    lockdown(lock[0].c_str());
                 }
 
                 double t0, t_elap[3];
@@ -444,16 +459,15 @@ int main_leaf (int argc, char ** argv, MPI_Comm world_comm)
                 else
                     do_write(fname.c_str(), amode.c_str(), NX, NY, t, G, O, world_comm, comm, &adios_groupsize, &t0, t_elap);
 
+                if (use_lock && (rank == 0))
+                {
+                    lockup(lock[1].c_str());
+                }
+                
                 //ltime=time(NULL);
                 //timetext = asctime(localtime(&ltime));
                 //timetext[24] = '\0';
 
-                if (it==0 && rank==0)
-                {
-                    printf("    %14s %5s %5s %9s %9s %9s %9s %9s %9s\n", "timestep",   "seq",  "rank",   "t1(sec)",   "(MiB/s)",   "t2(sec)",   "(MiB/s)",   "t3(sec)",   "(MiB/s)");
-                    printf("    %14s %5s %5s %9s %9s %9s %9s %9s %9s\n", "--------", "-----", "-----", "---------", "---------", "---------", "---------", "---------", "---------");
-                }
-                MPI_Barrier(comm);
                 sleep_with_interval((double)interval_sec, SLEEP_SEC);
 
                 printf(">>> %14.03f %5d %5d %9.03e %9.03f %9.03e %9.03f %9.03e %9.03f\n",
@@ -491,6 +505,8 @@ int main_leaf (int argc, char ** argv, MPI_Comm world_comm)
 
         double icee_deltat = 0.0;
         uint64_t start1[2], count1[2];
+        
+        pid_t pid = getpid();
 
         err = adios_read_init_method (adios_read_method, comm, rparam.c_str());
         if (err != 0)
@@ -592,6 +608,7 @@ int main_leaf (int argc, char ** argv, MPI_Comm world_comm)
 
                 /* Processing loop over the steps (we are already in the first one) */
                 //while (adios_errno != err_end_of_stream) {
+                int current_step = 0;
                 for (int it =0; it < nstep; it++)
                 {
                     /*
@@ -600,6 +617,11 @@ int main_leaf (int argc, char ** argv, MPI_Comm world_comm)
                      * -. NX is set by len argument
                      */
                 EVIL:
+                    if (use_lock && (rank == 0) && !(args_info.evilread_flag))
+                    {
+                        lockdown(lock[1].c_str());
+                    }
+                    
                     if (args_info.evilread_flag)
                     {
                         O = rand()%(G - NX);
@@ -612,8 +634,8 @@ int main_leaf (int argc, char ** argv, MPI_Comm world_comm)
                     //MPI_Barrier(comm);
                     double t0 = MPI_Wtime();
 
-                    if (NX>0) adios_schedule_read_byid (f, sel, v->varid, 0, 1, data);
-                    adios_schedule_read (f, NULL, "__icee_deltat__", 0, 1, &icee_deltat);
+                    if (NX>0) adios_schedule_read_byid (f, sel, v->varid, current_step, 1, data);
+                    adios_schedule_read (f, NULL, "__icee_deltat__", current_step, 1, &icee_deltat);
                     adios_perform_reads (f, 1);
                     //printf("icee_deltat=%g\n", icee_deltat);
 
@@ -625,6 +647,11 @@ int main_leaf (int argc, char ** argv, MPI_Comm world_comm)
                     if (NX>0) adios_selection_delete(sel);
                     adios_selection_delete(sel1);
 
+                    if (use_lock && (rank == 0) && !(args_info.evilread_flag))
+                    {
+                        lockup(lock[0].c_str());
+                    }
+                    
                     double sum = 0.0;
                     for (uint64_t i = 0; i < NX * NY; i++)
                     {
@@ -632,8 +659,8 @@ int main_leaf (int argc, char ** argv, MPI_Comm world_comm)
                     }
 
                     adios_groupsize = (NX*NY)*sizeof(ATYPE);
-                    printf("+++ %14.03f %5d %5d %9.03e %9.03f %9.03e %9.03f (%9s %9.03e %9.03e)\n",
-                           t0, f->current_step, rank, t10,
+                    printf("+++ (%d) %14.03f %5d %5d %9.03e %9.03f %9.03e %9.03f (%9s %9.03e %9.03e)\n",
+                           pid, t0, f->current_step, rank, t10,
                            (double)adios_groupsize/t10/1024.0/1024.0,
                            icee_deltat, (double)adios_groupsize/icee_deltat/1024.0/1024.0,
                            vname/*f->var_namelist[v->varid]*/, sum, sum/NX/NY);
@@ -663,12 +690,6 @@ int main_leaf (int argc, char ** argv, MPI_Comm world_comm)
                     if (args_info.append_flag)
                         amode = (it==0)? "w" : "a";
 
-                    if (use_lock && (rank == 0))
-                    {
-                        lockup(lock[0].c_str());
-                        lockdown(lock[1].c_str());
-                    }
-
                     if (adios_write_method != "NULL")
                     {
                         double t_elap[3];
@@ -693,7 +714,15 @@ int main_leaf (int argc, char ** argv, MPI_Comm world_comm)
                     sleep_with_interval((double)interval_sec, SLEEP_SEC);
 
                     // advance to 1) next available step with 2) blocking wait
-                    adios_advance_step (f, 0, timeout_sec);
+                    if (args_info.nostream_flag)
+                    {
+                        current_step++;
+                        adios_read_close (f);
+                        f = adios_read_open_file (fname.c_str(), adios_read_method, comm);
+                    }
+                    else
+                        adios_advance_step (f, 0, timeout_sec);
+                    
                     if (adios_errno == err_step_notready)
                     {
                         printf ("rank %d: No new step arrived within the timeout. Quit. %s\n",
