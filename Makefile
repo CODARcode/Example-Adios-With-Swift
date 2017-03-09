@@ -60,6 +60,14 @@ lib: adios_icee.o filelock.o icee_cmdline.o
 	$(CXX) -c -fPIC $(TCL_INCLUDE_SPEC) adios_icee_wrap.cxx
 	$(CXX) -shared -o libadios_icee.so adios_icee_wrap.o adios_icee.o filelock.o icee_cmdline.o $(TCL_LIB_SPEC) $(LIBS)
 
+common.o: common.c
+	$(CC) -c -fPIC -I . $(DATASPACES_INC) common.c
+
+dslib: common.o
+	swig ds.i
+	$(CC) -c -fPIC $(TCL_INCLUDE_SPEC) ds_wrap.c
+	$(CC) -shared -o libds.so common.o ds_wrap.o $(DATASPACES_LIB) -ldspaces -ldscommon -ldart
+
 ggo:
 	gengetopt --input=icee_cmdline.ggo --no-handle-version
 
