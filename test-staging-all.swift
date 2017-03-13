@@ -29,7 +29,7 @@ foreach value, index in a
   trace(value);
 }
 
-int b = @par=1 ds(1, 4, 0)  =>
+int b = @par=2 ds(2, 4, 1)  =>
 trace("Starting server ... done.");
 
 check_conf_exists() => {
