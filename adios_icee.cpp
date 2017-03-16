@@ -635,7 +635,9 @@ int main_leaf (int argc, char ** argv, MPI_Comm world_comm)
                     double t0 = MPI_Wtime();
 
                     if (NX>0) adios_schedule_read_byid (f, sel, v->varid, current_step, 1, data);
+#ifdef ICEE
                     adios_schedule_read (f, NULL, "__icee_deltat__", current_step, 1, &icee_deltat);
+#endif
                     adios_perform_reads (f, 1);
                     //printf("icee_deltat=%g\n", icee_deltat);
 
