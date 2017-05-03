@@ -105,3 +105,13 @@ MPICH_CPUMASK_DISPLAY=1
 TURBINE_LOG=1
 TURBINE_LAUNCH_OPTIONS
 ```
+
+Note on Cori
+------------
+
+To run with DataSpaces:
+```
+$ run-dataspaces.py -s 1 -c 4 --mpirun="srun -N 1" : \
+  --nompi srun -n 5 -N 1 /global/u1/w/wozniak/Public/sfw/tcl-8.6.6/bin/tclsh8.6 \
+  test-adios-staging.tic '--wmethod=DIMES' '--rmethod=DIMES'
+```
